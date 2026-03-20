@@ -13,7 +13,7 @@ COPY backend/pom.xml .
 RUN mvn dependency:go-offline -B
 COPY backend/src ./src
 # Copy Angular build output into Spring Boot static resources
-COPY --from=frontend-build /app/frontend/dist/wissensmanagement/browser/ ./src/main/resources/static/
+COPY --from=frontend-build /app/frontend/dist/browser/ ./src/main/resources/static/
 RUN mvn package -DskipTests -B
 
 # Stage 3: Runtime
