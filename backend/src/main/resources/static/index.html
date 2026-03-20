@@ -156,6 +156,16 @@
   <script>
     const API = '/api/artikel';
     let sidebarOpen = true;
+    const isEmbedded = window.self !== window.top;
+
+    // Im iframe: Sidebar und Toggle ausblenden, Main-Wrapper voll breit
+    if (isEmbedded) {
+      document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('sidebar').style.display = 'none';
+        document.getElementById('sidebar-toggle').style.display = 'none';
+        document.getElementById('main-wrapper').style.marginLeft = '0';
+      });
+    }
 
     function toggleSidebar() {
       sidebarOpen = !sidebarOpen;
@@ -257,8 +267,22 @@
 
     function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+    // URL-basiertes Routing: /artikel -> showPage('artikel'), /chat -> nicht verfuegbar etc.
+    function initFromUrl() {
+      var path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+      var pageMap = {
+        '': 'startseite',
+        'artikel': 'artikel',
+        'artikel/neu': 'neu',
+        'chat': 'startseite',
+        'kategorien': 'startseite'
+      };
+      var page = pageMap[path] || 'startseite';
+      showPage(page);
+    }
+
     // Init
-    loadStartseite();
+    initFromUrl();
   </script>
 </body>
 </html>
