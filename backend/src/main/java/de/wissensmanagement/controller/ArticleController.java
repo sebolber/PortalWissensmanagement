@@ -171,13 +171,13 @@ public class ArticleController {
         String tenantId = securityHelper.getCurrentTenantId();
         ArticleDto article = articleService.getArticle(tenantId, id);
 
-        String betreff = body.getOrDefault("betreff", "Artikel ueberpruefen: " + article.title());
-        String inhalt = body.getOrDefault("inhalt", "Bitte ueberpruefen Sie den Artikel: " + article.title());
+        String betreff = body.getOrDefault("betreff", "Artikel ueberpruefen: " + article.getTitle());
+        String inhalt = body.getOrDefault("inhalt", "Bitte ueberpruefen Sie den Artikel: " + article.getTitle());
         String assigneeUserId = body.get("assigneeUserId");
 
         String jwtToken = extractToken(httpRequest);
         String taskId = taskService.createArticleTask(jwtToken, tenantId, id,
-                article.title(), betreff, inhalt, assigneeUserId);
+                article.getTitle(), betreff, inhalt, assigneeUserId);
 
         if (taskId != null) {
             // Link task to article
