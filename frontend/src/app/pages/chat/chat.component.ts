@@ -1,52 +1,110 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { ChatService, ChatSessionDto, SourceRef } from '../../services/chat.service';
+
+interface DisplayMessage {
+  role: string;
+  content: string;
+  sources?: SourceRef[];
+  model?: string | null;
+}
 
 @Component({
   selector: 'app-chat',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   template: `
-    <div class="page-header">
-      <h1>Wissenschat</h1>
-    </div>
-
-    <div class="card chat-container">
-      <div class="messages-area">
-        <div *ngIf="messages.length === 0" class="empty-state">
-          <div class="empty-icon">&#128172;</div>
-          <h3>Willkommen im Wissenschat</h3>
-          <p>Stellen Sie Fragen zu Ihrer Wissensdatenbank und erhalten Sie KI-gestuetzte Antworten auf Basis Ihrer Artikel.</p>
+    <div class="chat-layout">
+      <!-- Sidebar: Sessions -->
+      <div class="sessions-panel" [class.collapsed]="sessionsPanelCollapsed">
+        <div class="sessions-header">
+          <h2 *ngIf="!sessionsPanelCollapsed">Unterhaltungen</h2>
+          <button class="btn-icon" (click)="sessionsPanelCollapsed = !sessionsPanelCollapsed"
+                  [title]="sessionsPanelCollapsed ? 'Einblenden' : 'Ausblenden'">
+            {{ sessionsPanelCollapsed ? '&#9654;' : '&#9664;' }}
+          </button>
         </div>
 
-        <div *ngFor="let m of messages" class="message" [class.user]="m.role === 'user'" [class.assistant]="m.role === 'assistant'">
-          <div class="message-bubble">
-            <div class="message-content">{{ m.content }}</div>
-            <div *ngIf="m.sources && m.sources.length > 0" class="sources">
-              <span class="sources-label">Quellen:</span>
-              <a *ngFor="let s of m.sources" [routerLink]="'/artikel/' + s.articleId" class="source-link">{{ s.title }}</a>
+        <div *ngIf="!sessionsPanelCollapsed">
+          <button class="btn btn-primary new-chat-btn" (click)="newSession()">+ Neue Unterhaltung</button>
+
+          <div class="session-list">
+            <div *ngFor="let s of sessions" class="session-item" [class.active]="s.id === currentSessionId"
+                 (click)="selectSession(s)">
+              <span class="session-title">{{ s.title }}</span>
+              <button class="btn-delete" (click)="deleteSession(s, $event)" title="Loeschen">&times;</button>
+            </div>
+            <div *ngIf="sessions.length === 0" class="sessions-empty">Keine Unterhaltungen</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Chat -->
+      <div class="chat-main">
+        <div class="chat-header">
+          <h1>{{ currentSessionTitle || 'Wissenschat' }}</h1>
+          <span *ngIf="lastModel" class="model-badge">{{ lastModel }}</span>
+        </div>
+
+        <div class="messages-area" #messagesContainer>
+          <div *ngIf="messages.length === 0 && !loading" class="empty-state">
+            <div class="empty-icon">&#128172;</div>
+            <h3>Willkommen im Wissenschat</h3>
+            <p>Stellen Sie Fragen zu Ihrer Wissensdatenbank und erhalten Sie KI-gestuetzte Antworten auf Basis Ihrer Artikel.</p>
+          </div>
+
+          <div *ngFor="let m of messages" class="message" [class.user]="m.role === 'user'" [class.assistant]="m.role === 'assistant'">
+            <div class="message-bubble">
+              <div class="message-content" [style.white-space]="'pre-wrap'">{{ m.content }}</div>
+              <div *ngIf="m.sources && m.sources.length > 0" class="sources">
+                <span class="sources-label">Quellen:</span>
+                <a *ngFor="let s of m.sources" [routerLink]="'/artikel/' + s.articleId" class="source-link">
+                  {{ s.title }}<span *ngIf="s.categoryName" class="source-cat"> ({{ s.categoryName }})</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="loading" class="message assistant">
+            <div class="message-bubble typing">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
             </div>
           </div>
         </div>
 
-        <div *ngIf="loading" class="message assistant">
-          <div class="message-bubble typing">
-            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          </div>
-        </div>
-      </div>
+        <div *ngIf="errorMsg" class="error-bar">{{ errorMsg }}</div>
 
-      <div class="input-area">
-        <input type="text" [(ngModel)]="userInput" (keyup.enter)="send()" placeholder="Stellen Sie eine Frage..." [disabled]="loading">
-        <button class="btn btn-primary" (click)="send()" [disabled]="!userInput.trim() || loading">Senden</button>
+        <div class="input-area">
+          <input type="text" [(ngModel)]="userInput" (keyup.enter)="send()"
+                 placeholder="Stellen Sie eine Frage..." [disabled]="loading">
+          <button class="btn btn-primary" (click)="send()" [disabled]="!userInput.trim() || loading">Senden</button>
+        </div>
       </div>
     </div>
   `,
   styles: [`
-    .page-header { margin-bottom: 1rem; }
-    .page-header h1 { font-size: 1.25rem; font-weight: 600; }
-    .chat-container { display: flex; flex-direction: column; height: calc(100vh - 10rem); padding: 0; overflow: hidden; }
+    .chat-layout { display: flex; height: calc(100vh - 5rem); gap: 0; }
+    .sessions-panel { width: 260px; background: #fff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; transition: width 0.2s; flex-shrink: 0; }
+    .sessions-panel.collapsed { width: 40px; }
+    .sessions-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; border-bottom: 1px solid #e5e7eb; }
+    .sessions-header h2 { font-size: 0.875rem; font-weight: 600; }
+    .btn-icon { border: none; background: none; cursor: pointer; font-size: 0.75rem; color: #6b7280; padding: 0.25rem; }
+    .btn-icon:hover { color: #006EC7; }
+    .new-chat-btn { width: calc(100% - 1.5rem); margin: 0.75rem; font-size: 0.8125rem; }
+    .session-list { flex: 1; overflow-y: auto; }
+    .session-item { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 0.75rem; cursor: pointer; border-bottom: 1px solid #f3f4f6; font-size: 0.8125rem; }
+    .session-item:hover { background: #f9fafb; }
+    .session-item.active { background: #eff6ff; border-left: 3px solid #006EC7; }
+    .session-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn-delete { border: none; background: none; color: #d1d5db; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1; }
+    .btn-delete:hover { color: #dc2626; }
+    .sessions-empty { text-align: center; padding: 1.5rem 0.75rem; color: #9ca3af; font-size: 0.8125rem; }
+    .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #fafafa; }
+    .chat-header { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem; border-bottom: 1px solid #e5e7eb; background: #fff; }
+    .chat-header h1 { font-size: 1rem; font-weight: 600; flex: 1; }
+    .model-badge { font-size: 0.6875rem; padding: 0.15rem 0.5rem; background: #f3f4f6; border-radius: 0.25rem; color: #6b7280; }
     .messages-area { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
     .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: #9ca3af; }
     .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
@@ -57,23 +115,97 @@ import { RouterModule } from '@angular/router';
     .message.assistant { justify-content: flex-start; }
     .message-bubble { max-width: 75%; padding: 0.75rem 1rem; border-radius: 1rem; font-size: 0.875rem; line-height: 1.6; }
     .message.user .message-bubble { background: #006EC7; color: #fff; border-bottom-right-radius: 0.25rem; }
-    .message.assistant .message-bubble { background: #f3f4f6; color: #1f2937; border-bottom-left-radius: 0.25rem; }
+    .message.assistant .message-bubble { background: #fff; color: #1f2937; border-bottom-left-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .typing { display: flex; gap: 0.25rem; padding: 0.75rem 1.25rem; }
     .dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #9ca3af; animation: bounce 1.4s infinite ease-in-out both; }
     .dot:nth-child(1) { animation-delay: -0.32s; }
     .dot:nth-child(2) { animation-delay: -0.16s; }
     @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-    .sources { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; }
-    .sources-label { font-size: 0.75rem; color: #6b7280; margin-right: 0.375rem; }
-    .source-link { font-size: 0.75rem; margin-right: 0.5rem; color: #006EC7; }
+    .sources { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: center; }
+    .sources-label { font-size: 0.75rem; color: #6b7280; margin-right: 0.25rem; }
+    .source-link { font-size: 0.75rem; padding: 0.1rem 0.4rem; background: #eff6ff; border-radius: 0.25rem; color: #006EC7; text-decoration: none; }
+    .source-link:hover { background: #dbeafe; text-decoration: none; }
+    .source-cat { color: #9ca3af; }
+    .error-bar { padding: 0.5rem 1.5rem; background: #fef2f2; color: #dc2626; font-size: 0.8125rem; border-top: 1px solid #fecaca; }
     .input-area { display: flex; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background: #fff; }
     .input-area input { flex: 1; }
+    @media (max-width: 768px) { .sessions-panel { display: none; } }
   `]
 })
-export class ChatComponent {
-  messages: { role: string; content: string; sources?: { articleId: string; title: string }[] }[] = [];
+export class ChatComponent implements OnInit, AfterViewChecked {
+  private chatSvc = inject(ChatService);
+  @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
+
+  sessions: ChatSessionDto[] = [];
+  currentSessionId: string | null = null;
+  currentSessionTitle = '';
+  messages: DisplayMessage[] = [];
   userInput = '';
   loading = false;
+  errorMsg = '';
+  lastModel: string | null = null;
+  sessionsPanelCollapsed = false;
+  private shouldScroll = false;
+
+  ngOnInit(): void {
+    this.loadSessions();
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.shouldScroll) {
+      this.scrollToBottom();
+      this.shouldScroll = false;
+    }
+  }
+
+  loadSessions(): void {
+    this.chatSvc.listSessions().subscribe({
+      next: s => this.sessions = s,
+      error: () => {}
+    });
+  }
+
+  selectSession(session: ChatSessionDto): void {
+    this.currentSessionId = session.id;
+    this.currentSessionTitle = session.title;
+    this.messages = [];
+    this.errorMsg = '';
+
+    this.chatSvc.getMessages(session.id).subscribe({
+      next: msgs => {
+        this.messages = msgs.map(m => {
+          const dm: DisplayMessage = { role: m.role, content: m.content };
+          if (m.sourceRefs) {
+            try { dm.sources = JSON.parse(m.sourceRefs); } catch {}
+          }
+          if (m.modelId) dm.model = m.modelId;
+          return dm;
+        });
+        this.shouldScroll = true;
+      }
+    });
+  }
+
+  newSession(): void {
+    this.currentSessionId = null;
+    this.currentSessionTitle = '';
+    this.messages = [];
+    this.errorMsg = '';
+    this.lastModel = null;
+  }
+
+  deleteSession(session: ChatSessionDto, event: Event): void {
+    event.stopPropagation();
+    if (!confirm(`Unterhaltung "${session.title}" loeschen?`)) return;
+    this.chatSvc.deleteSession(session.id).subscribe({
+      next: () => {
+        this.sessions = this.sessions.filter(s => s.id !== session.id);
+        if (this.currentSessionId === session.id) {
+          this.newSession();
+        }
+      }
+    });
+  }
 
   send(): void {
     const text = this.userInput.trim();
@@ -82,14 +214,37 @@ export class ChatComponent {
     this.messages.push({ role: 'user', content: text });
     this.userInput = '';
     this.loading = true;
+    this.errorMsg = '';
+    this.shouldScroll = true;
 
-    // Placeholder - will be connected to backend chat API in Iteration 5
-    setTimeout(() => {
-      this.messages.push({
-        role: 'assistant',
-        content: 'Die Chat-Funktion wird in einem kommenden Update verfuegbar sein. Bitte nutzen Sie in der Zwischenzeit die Suchfunktion in der Wissensdatenbank.'
-      });
-      this.loading = false;
-    }, 1000);
+    this.chatSvc.send(this.currentSessionId, text).subscribe({
+      next: response => {
+        this.currentSessionId = response.sessionId;
+        this.currentSessionTitle = response.sessionTitle;
+        this.lastModel = response.model;
+
+        this.messages.push({
+          role: 'assistant',
+          content: response.content,
+          sources: response.sources,
+          model: response.model
+        });
+
+        this.loading = false;
+        this.shouldScroll = true;
+        this.loadSessions();
+      },
+      error: err => {
+        this.loading = false;
+        this.errorMsg = err.error?.message || 'Fehler bei der Verarbeitung. Bitte versuchen Sie es erneut.';
+      }
+    });
+  }
+
+  private scrollToBottom(): void {
+    try {
+      const el = this.messagesContainer?.nativeElement;
+      if (el) el.scrollTop = el.scrollHeight;
+    } catch {}
   }
 }
