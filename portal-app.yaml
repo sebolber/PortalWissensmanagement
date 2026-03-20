@@ -11,7 +11,7 @@ port: 8080
 healthCheck: /api/health
 
 env:
-  DB_URL: jdbc:postgresql://portal-db:5432/healthportal
+  DB_URL: jdbc:postgresql://portal-db:5432/portal
   DB_USER: portal
   DB_PASS: portal
 

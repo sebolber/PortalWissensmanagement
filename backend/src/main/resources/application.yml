@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: ${DB_URL:jdbc:postgresql://portal-db:5432/healthportal}
+    url: ${DB_URL:jdbc:postgresql://portal-db:5432/portal}
     username: ${DB_USER:portal}
     password: ${DB_PASS:portal}
     driver-class-name: org.postgresql.Driver
