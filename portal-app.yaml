@@ -1,23 +1,26 @@
 # portal-app.yaml - Manifest fuer Health Portal Apps
-# Diese Datei muss im Root-Verzeichnis des App-Repositories liegen.
 
 name: Wissensmanagement
-version: 1.1.0
-description: Wissensmanagement-App fuer das Health Portal mit Startseite und Feature-Uebersicht
+version: 2.0.0
+description: Wissensmanagement-App mit Wissensdatenbank, Artikelverwaltung und Volltextsuche
 
 dockerfile: Dockerfile
 
-port: 80
+port: 8080
 
 env:
-  NODE_ENV: production
+  DB_HOST: portal-db
+  DB_PORT: "5432"
+  DB_NAME: wissensmanagement
+  DB_USERNAME: portal
+  DB_PASSWORD: portal
 
-healthCheck: /
+healthCheck: /api/artikel/statistik
 
 useCases:
   - key: wissensmanagement-lesen
     label: "Wissensmanagement - Lesen"
-    beschreibung: "Lesezugriff auf das Wissensmanagement"
+    beschreibung: "Lesezugriff auf die Wissensdatenbank"
   - key: wissensmanagement-verwalten
     label: "Wissensmanagement - Verwalten"
-    beschreibung: "Verwaltungsfunktionen im Wissensmanagement"
+    beschreibung: "Artikel erstellen, bearbeiten und loeschen"
