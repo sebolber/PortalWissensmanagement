@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -7,8 +7,8 @@ import { RouterModule } from '@angular/router';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="app-layout">
-      <aside class="sidebar" [class.collapsed]="sidebarCollapsed">
+    <div class="app-layout" [class.embedded]="embedded">
+      <aside class="sidebar" [class.collapsed]="sidebarCollapsed" *ngIf="!embedded">
         <div class="sidebar-header">
           <div class="sidebar-logo">WM</div>
           <span class="sidebar-title" *ngIf="!sidebarCollapsed">Wissensmanagement</span>
@@ -42,13 +42,14 @@ import { RouterModule } from '@angular/router';
           <svg *ngIf="sidebarCollapsed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 7 18 12 13 17"/></svg>
         </button>
       </aside>
-      <main class="main-content" [class.expanded]="sidebarCollapsed">
+      <main class="main-content" [class.expanded]="sidebarCollapsed" [class.embedded]="embedded">
         <router-outlet></router-outlet>
       </main>
     </div>
   `,
   styles: [`
     .app-layout { display: flex; min-height: 100vh; }
+    .app-layout.embedded { display: block; }
 
     .sidebar {
       width: 240px; background: #fff; border-right: 1px solid #e5e7eb;
@@ -96,8 +97,14 @@ import { RouterModule } from '@angular/router';
       background: #f5f5f4; min-height: 100vh; padding: 1.5rem;
     }
     .main-content.expanded { margin-left: 56px; }
+    .main-content.embedded { margin-left: 0; }
   `]
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   sidebarCollapsed = false;
+  embedded = false;
+
+  ngOnInit(): void {
+    this.embedded = window.self !== window.top;
+  }
 }
