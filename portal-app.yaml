@@ -1,10 +1,10 @@
 # portal-app.yaml - Manifest fuer Health Portal Apps
 
 name: Wissensmanagement
-version: 3.0.0
+version: 3.1.0
 description: Wissensdatenbank mit RAG-Chat, LLM-Integration, Artikelverwaltung und Volltextsuche
 
-branch: claude/add-git-app-installer-JFq86
+branch: claude/fix-portal-menu-display-2oBdo
 
 dockerfile: Dockerfile
 

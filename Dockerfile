@@ -1,14 +1,22 @@
-# Stage 1: Build Spring Boot Backend
+# Stage 1: Build Angular Frontend
+FROM node:18-alpine AS frontend-build
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Build Spring Boot Backend
 FROM maven:3.9-eclipse-temurin-21-alpine AS backend-build
 WORKDIR /app
 COPY backend/pom.xml .
 RUN mvn dependency:go-offline -B
-# Cache-bust: force fresh COPY of source files
-RUN echo "source-v3.0.0-2"
 COPY backend/src ./src
+# Angular-Build in Spring Boot static resources kopieren
+COPY --from=frontend-build /app/dist/browser/ ./src/main/resources/static/
 RUN mvn package -DskipTests -B
 
-# Stage 2: Runtime
+# Stage 3: Runtime
 FROM eclipse-temurin:21-jre-alpine
 LABEL app.version="3.0.0"
 WORKDIR /app
