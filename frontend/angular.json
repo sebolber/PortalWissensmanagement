@@ -14,9 +14,7 @@
             "outputPath": "dist",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "baseHref": "./",
             "tsConfig": "tsconfig.app.json",
             "styles": ["src/styles.css"],
             "scripts": []
@@ -26,7 +24,12 @@
               "budgets": [
                 { "type": "initial", "maximumWarning": "500kB", "maximumError": "1MB" }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": true,
+                "fonts": false
+              }
             },
             "development": {
               "optimization": false,
