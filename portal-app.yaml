@@ -1,0 +1,23 @@
+# portal-app.yaml - Manifest fuer Health Portal Apps
+# Diese Datei muss im Root-Verzeichnis des App-Repositories liegen.
+
+name: Wissensmanagement
+version: 1.0.0
+description: Wissensmanagement-App fuer das Health Portal - Hello World Test
+
+dockerfile: Dockerfile
+
+port: 80
+
+env:
+  NODE_ENV: production
+
+healthCheck: /
+
+useCases:
+  - key: wissensmanagement-lesen
+    label: "Wissensmanagement - Lesen"
+    beschreibung: "Lesezugriff auf das Wissensmanagement"
+  - key: wissensmanagement-verwalten
+    label: "Wissensmanagement - Verwalten"
+    beschreibung: "Verwaltungsfunktionen im Wissensmanagement"
