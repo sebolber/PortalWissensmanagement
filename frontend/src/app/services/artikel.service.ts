@@ -5,9 +5,9 @@ import { Article, ArticlePage, ArticleVersion, Category, Tag, Statistik } from '
 
 @Injectable({ providedIn: 'root' })
 export class ArtikelService {
-  private readonly base = '/api/artikel';
-  private readonly catBase = '/api/kategorien';
-  private readonly tagBase = '/api/tags';
+  private readonly base = 'api/artikel';
+  private readonly catBase = 'api/kategorien';
+  private readonly tagBase = 'api/tags';
 
   constructor(private http: HttpClient) {}
 

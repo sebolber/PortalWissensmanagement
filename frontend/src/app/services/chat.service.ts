@@ -37,7 +37,7 @@ export interface ChatResponseDto {
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
-  private readonly base = '/api/chat';
+  private readonly base = 'api/chat';
 
   constructor(private http: HttpClient) {}
 
