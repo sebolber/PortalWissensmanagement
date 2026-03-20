@@ -18,7 +18,10 @@ RUN mvn package -DskipTests -B
 
 # Stage 3: Runtime
 FROM eclipse-temurin:21-jre-alpine
+RUN apk add --no-cache postgresql-client
 WORKDIR /app
 COPY --from=backend-build /app/backend/target/*.jar app.jar
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["/app/entrypoint.sh"]
