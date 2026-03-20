@@ -1,9 +1,12 @@
 package de.wissensmanagement.config;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
 
 @Component
@@ -31,5 +34,22 @@ public class SecurityHelper {
 
     public void requireAuthentication() {
         getAuthDetails();
+    }
+
+    /**
+     * Extrahiert den JWT-Token aus dem aktuellen HTTP-Request.
+     */
+    public String getCurrentToken() {
+        ServletRequestAttributes attrs =
+                (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Kein HTTP-Kontext verfuegbar");
+        }
+        HttpServletRequest request = attrs.getRequest();
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7);
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Kein Authentifizierungstoken vorhanden");
     }
 }

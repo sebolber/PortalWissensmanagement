@@ -4,6 +4,7 @@ import de.wissensmanagement.config.SecurityHelper;
 import de.wissensmanagement.entity.ChatMessage;
 import de.wissensmanagement.entity.ChatSession;
 import de.wissensmanagement.service.ChatService;
+import de.wissensmanagement.service.PermissionService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,14 +18,18 @@ public class ChatController {
 
     private final ChatService chatService;
     private final SecurityHelper securityHelper;
+    private final PermissionService permissionService;
 
-    public ChatController(ChatService chatService, SecurityHelper securityHelper) {
+    public ChatController(ChatService chatService, SecurityHelper securityHelper,
+                          PermissionService permissionService) {
         this.chatService = chatService;
         this.securityHelper = securityHelper;
+        this.permissionService = permissionService;
     }
 
     @GetMapping("/sessions")
     public List<SessionDto> listSessions() {
+        permissionService.requireChat(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         String userId = securityHelper.getCurrentUserId();
         return chatService.listSessions(tenantId, userId).stream()
@@ -34,6 +39,7 @@ public class ChatController {
 
     @PostMapping("/sessions")
     public SessionDto createSession(@RequestBody(required = false) Map<String, String> body) {
+        permissionService.requireChat(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         String userId = securityHelper.getCurrentUserId();
         String title = body != null ? body.get("title") : null;
@@ -42,6 +48,7 @@ public class ChatController {
 
     @GetMapping("/sessions/{sessionId}")
     public SessionDto getSession(@PathVariable String sessionId) {
+        permissionService.requireChat(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         String userId = securityHelper.getCurrentUserId();
         return toSessionDto(chatService.getSession(sessionId, tenantId, userId));
@@ -49,6 +56,7 @@ public class ChatController {
 
     @DeleteMapping("/sessions/{sessionId}")
     public ResponseEntity<Void> deleteSession(@PathVariable String sessionId) {
+        permissionService.requireChat(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         String userId = securityHelper.getCurrentUserId();
         chatService.deleteSession(sessionId, tenantId, userId);
@@ -57,6 +65,7 @@ public class ChatController {
 
     @GetMapping("/sessions/{sessionId}/messages")
     public List<MessageDto> getMessages(@PathVariable String sessionId) {
+        permissionService.requireChat(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         String userId = securityHelper.getCurrentUserId();
         // Validate access
@@ -68,6 +77,7 @@ public class ChatController {
 
     @PostMapping("/send")
     public ChatResponseDto sendMessage(@RequestBody SendRequest request, HttpServletRequest httpRequest) {
+        permissionService.requireChat(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         String userId = securityHelper.getCurrentUserId();
         String jwtToken = extractToken(httpRequest);

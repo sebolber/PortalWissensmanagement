@@ -3,6 +3,7 @@ package de.wissensmanagement.controller;
 import de.wissensmanagement.config.SecurityHelper;
 import de.wissensmanagement.dto.CategoryDto;
 import de.wissensmanagement.service.CategoryService;
+import de.wissensmanagement.service.PermissionService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,34 +16,42 @@ public class CategoryController {
 
     private final CategoryService categoryService;
     private final SecurityHelper securityHelper;
+    private final PermissionService permissionService;
 
-    public CategoryController(CategoryService categoryService, SecurityHelper securityHelper) {
+    public CategoryController(CategoryService categoryService, SecurityHelper securityHelper,
+                              PermissionService permissionService) {
         this.categoryService = categoryService;
         this.securityHelper = securityHelper;
+        this.permissionService = permissionService;
     }
 
     @GetMapping
     public List<CategoryDto> list() {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
         return categoryService.listCategories(securityHelper.getCurrentTenantId());
     }
 
     @GetMapping("/{id}")
     public CategoryDto getById(@PathVariable String id) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
         return categoryService.getCategory(securityHelper.getCurrentTenantId(), id);
     }
 
     @PostMapping
     public CategoryDto create(@Valid @RequestBody CategoryDto req) {
+        permissionService.requireAdmin(securityHelper.getCurrentToken());
         return categoryService.createCategory(securityHelper.getCurrentTenantId(), req);
     }
 
     @PutMapping("/{id}")
     public CategoryDto update(@PathVariable String id, @Valid @RequestBody CategoryDto req) {
+        permissionService.requireAdmin(securityHelper.getCurrentToken());
         return categoryService.updateCategory(securityHelper.getCurrentTenantId(), id, req);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
+        permissionService.requireAdmin(securityHelper.getCurrentToken());
         categoryService.deleteCategory(securityHelper.getCurrentTenantId(), id);
         return ResponseEntity.noContent().build();
     }

@@ -2,6 +2,7 @@ package de.wissensmanagement.controller;
 
 import de.wissensmanagement.config.SecurityHelper;
 import de.wissensmanagement.dto.TagDto;
+import de.wissensmanagement.service.PermissionService;
 import de.wissensmanagement.service.TagService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,19 +16,24 @@ public class TagController {
 
     private final TagService tagService;
     private final SecurityHelper securityHelper;
+    private final PermissionService permissionService;
 
-    public TagController(TagService tagService, SecurityHelper securityHelper) {
+    public TagController(TagService tagService, SecurityHelper securityHelper,
+                         PermissionService permissionService) {
         this.tagService = tagService;
         this.securityHelper = securityHelper;
+        this.permissionService = permissionService;
     }
 
     @GetMapping
     public List<TagDto> list() {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
         return tagService.listTags(securityHelper.getCurrentTenantId());
     }
 
     @PostMapping
     public TagDto create(@RequestBody Map<String, String> body) {
+        permissionService.requireAdmin(securityHelper.getCurrentToken());
         String name = body.get("name");
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Tag-Name ist erforderlich");
@@ -37,6 +43,7 @@ public class TagController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
+        permissionService.requireAdmin(securityHelper.getCurrentToken());
         tagService.deleteTag(securityHelper.getCurrentTenantId(), id);
         return ResponseEntity.noContent().build();
     }

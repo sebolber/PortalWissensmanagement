@@ -5,6 +5,7 @@ import de.wissensmanagement.dto.*;
 import de.wissensmanagement.enums.ArticleStatus;
 import de.wissensmanagement.service.ArticleService;
 import de.wissensmanagement.service.FeedbackService;
+import de.wissensmanagement.service.PermissionService;
 import de.wissensmanagement.service.TaskIntegrationService;
 import de.wissensmanagement.service.UsageTrackingService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,17 +28,20 @@ public class ArticleController {
     private final TaskIntegrationService taskService;
     private final UsageTrackingService usageService;
     private final SecurityHelper securityHelper;
+    private final PermissionService permissionService;
 
     public ArticleController(ArticleService articleService,
                               FeedbackService feedbackService,
                               TaskIntegrationService taskService,
                               UsageTrackingService usageService,
-                              SecurityHelper securityHelper) {
+                              SecurityHelper securityHelper,
+                              PermissionService permissionService) {
         this.articleService = articleService;
         this.feedbackService = feedbackService;
         this.taskService = taskService;
         this.usageService = usageService;
         this.securityHelper = securityHelper;
+        this.permissionService = permissionService;
     }
 
     @GetMapping
@@ -50,6 +54,7 @@ public class ArticleController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "DESC") String sortDir) {
 
+        permissionService.requireLesen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         return articleService.listArticles(tenantId, status, q, categoryId, PageRequest.of(page, size, sort));
@@ -58,6 +63,7 @@ public class ArticleController {
     @GetMapping("/{id}")
     public ArticleDto getById(@PathVariable String id,
                                @RequestParam(defaultValue = "true") boolean trackView) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         if (trackView) {
             return articleService.getArticleAndTrackView(tenantId, id);
@@ -67,6 +73,7 @@ public class ArticleController {
 
     @PostMapping
     public ArticleDto create(@Valid @RequestBody ArticleCreateRequest req) {
+        permissionService.requireSchreiben(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         String userId = securityHelper.getCurrentUserId();
         return articleService.createArticle(tenantId, userId, req);
@@ -75,6 +82,7 @@ public class ArticleController {
     @PutMapping("/{id}")
     public ArticleDto update(@PathVariable String id,
                               @Valid @RequestBody ArticleUpdateRequest req) {
+        permissionService.requireSchreiben(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         String userId = securityHelper.getCurrentUserId();
         return articleService.updateArticle(tenantId, userId, id, req);
@@ -82,18 +90,22 @@ public class ArticleController {
 
     @PutMapping("/{id}/publish")
     public ArticleDto publish(@PathVariable String id) {
+        permissionService.requireVeroeffentlichen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         return articleService.publishArticle(tenantId, id);
     }
 
     @PutMapping("/{id}/archive")
     public ArticleDto archive(@PathVariable String id) {
+        permissionService.requireVeroeffentlichen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         return articleService.archiveArticle(tenantId, id);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
+        permissionService.requireBerechtigung(securityHelper.getCurrentToken(),
+                PermissionService.UC_SCHREIBEN, "loeschen");
         String tenantId = securityHelper.getCurrentTenantId();
         articleService.deleteArticle(tenantId, id);
         return ResponseEntity.noContent().build();
@@ -101,6 +113,7 @@ public class ArticleController {
 
     @GetMapping("/{id}/versionen")
     public List<ArticleVersionDto> getVersions(@PathVariable String id) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         return articleService.getVersionHistory(tenantId, id);
     }
@@ -108,6 +121,7 @@ public class ArticleController {
     @PostMapping("/{id}/feedback")
     public ResponseEntity<Void> submitFeedback(@PathVariable String id,
                                                 @Valid @RequestBody FeedbackRequest req) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         String userId = securityHelper.getCurrentUserId();
         feedbackService.submitFeedback(tenantId, userId, id, req);
@@ -116,30 +130,35 @@ public class ArticleController {
 
     @GetMapping("/statistik")
     public StatistikDto statistik() {
+        permissionService.requireAdmin(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         return articleService.getStatistik(tenantId);
     }
 
     @GetMapping("/neueste")
     public List<ArticleDto> newest(@RequestParam(defaultValue = "5") int limit) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         return articleService.getNewestArticles(tenantId, limit);
     }
 
     @GetMapping("/beliebt")
     public List<ArticleDto> popular(@RequestParam(defaultValue = "5") int limit) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         return articleService.getMostViewedArticles(tenantId, limit);
     }
 
     @GetMapping("/zuletzt-genutzt")
     public List<ArticleDto> recentlyUsed(@RequestParam(defaultValue = "5") int limit) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         return articleService.getRecentlyUsedArticles(tenantId, limit);
     }
 
     @GetMapping("/aufgabe/{taskId}")
     public List<ArticleDto> forTask(@PathVariable String taskId) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         return articleService.getArticlesForTask(tenantId, taskId);
     }
@@ -148,6 +167,7 @@ public class ArticleController {
     public ResponseEntity<Map<String, String>> createTask(@PathVariable String id,
                                                            @RequestBody Map<String, String> body,
                                                            HttpServletRequest httpRequest) {
+        permissionService.requireSchreiben(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         ArticleDto article = articleService.getArticle(tenantId, id);
 
