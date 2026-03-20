@@ -3,16 +3,28 @@ server:
 
 spring:
   datasource:
-    url: jdbc:h2:mem:wissensmanagement;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: ${DB_URL:jdbc:postgresql://portal-db:5432/healthportal}
+    username: ${DB_USER:portal}
+    password: ${DB_PASS:portal}
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
-    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    table: wm_flyway_history
+
+portal:
+  jwt:
+    secret: ${JWT_SECRET:ThisIsADevelopmentSecretKeyThatMustBeAtLeast32BytesLong!}
 
 logging:
   level:

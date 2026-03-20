@@ -1,19 +1,33 @@
 # portal-app.yaml - Manifest fuer Health Portal Apps
 
 name: Wissensmanagement
-version: 2.2.0
-description: Wissensmanagement-App mit Wissensdatenbank, Artikelverwaltung und Volltextsuche
+version: 3.0.0
+description: Wissensdatenbank mit RAG-Chat, LLM-Integration, Artikelverwaltung und Volltextsuche
 
 dockerfile: Dockerfile
 
 port: 8080
 
-healthCheck: /api/artikel/statistik
+healthCheck: /api/health
+
+env:
+  DB_URL: jdbc:postgresql://portal-db:5432/healthportal
+  DB_USER: portal
+  DB_PASS: portal
 
 useCases:
   - key: wissensmanagement-lesen
     label: "Wissensmanagement - Lesen"
     beschreibung: "Lesezugriff auf die Wissensdatenbank"
-  - key: wissensmanagement-verwalten
-    label: "Wissensmanagement - Verwalten"
-    beschreibung: "Artikel erstellen, bearbeiten und loeschen"
+  - key: wissensmanagement-schreiben
+    label: "Wissensmanagement - Schreiben"
+    beschreibung: "Artikel erstellen und bearbeiten"
+  - key: wissensmanagement-veroeffentlichen
+    label: "Wissensmanagement - Veroeffentlichen"
+    beschreibung: "Artikel veroeffentlichen und archivieren"
+  - key: wissensmanagement-chat
+    label: "Wissensmanagement - Chat"
+    beschreibung: "Wissenschat mit LLM-Unterstuetzung nutzen"
+  - key: wissensmanagement-admin
+    label: "Wissensmanagement - Administration"
+    beschreibung: "Kategorien, Tags und Einstellungen verwalten"
