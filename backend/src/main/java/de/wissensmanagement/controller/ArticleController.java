@@ -5,6 +5,9 @@ import de.wissensmanagement.dto.*;
 import de.wissensmanagement.enums.ArticleStatus;
 import de.wissensmanagement.service.ArticleService;
 import de.wissensmanagement.service.FeedbackService;
+import de.wissensmanagement.service.TaskIntegrationService;
+import de.wissensmanagement.service.UsageTrackingService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/artikel")
@@ -20,13 +24,19 @@ public class ArticleController {
 
     private final ArticleService articleService;
     private final FeedbackService feedbackService;
+    private final TaskIntegrationService taskService;
+    private final UsageTrackingService usageService;
     private final SecurityHelper securityHelper;
 
     public ArticleController(ArticleService articleService,
                               FeedbackService feedbackService,
+                              TaskIntegrationService taskService,
+                              UsageTrackingService usageService,
                               SecurityHelper securityHelper) {
         this.articleService = articleService;
         this.feedbackService = feedbackService;
+        this.taskService = taskService;
+        this.usageService = usageService;
         this.securityHelper = securityHelper;
     }
 
@@ -132,5 +142,36 @@ public class ArticleController {
     public List<ArticleDto> forTask(@PathVariable String taskId) {
         String tenantId = securityHelper.getCurrentTenantId();
         return articleService.getArticlesForTask(tenantId, taskId);
+    }
+
+    @PostMapping("/{id}/aufgabe")
+    public ResponseEntity<Map<String, String>> createTask(@PathVariable String id,
+                                                           @RequestBody Map<String, String> body,
+                                                           HttpServletRequest httpRequest) {
+        String tenantId = securityHelper.getCurrentTenantId();
+        ArticleDto article = articleService.getArticle(tenantId, id);
+
+        String betreff = body.getOrDefault("betreff", "Artikel ueberpruefen: " + article.title());
+        String inhalt = body.getOrDefault("inhalt", "Bitte ueberpruefen Sie den Artikel: " + article.title());
+        String assigneeUserId = body.get("assigneeUserId");
+
+        String jwtToken = extractToken(httpRequest);
+        String taskId = taskService.createArticleTask(jwtToken, tenantId, id,
+                article.title(), betreff, inhalt, assigneeUserId);
+
+        if (taskId != null) {
+            // Link task to article
+            articleService.linkTask(tenantId, id, taskId);
+            return ResponseEntity.ok(Map.of("taskId", taskId));
+        }
+        return ResponseEntity.internalServerError().body(Map.of("error", "Aufgabe konnte nicht erstellt werden"));
+    }
+
+    private String extractToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7);
+        }
+        return null;
     }
 }

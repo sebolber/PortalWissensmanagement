@@ -189,6 +189,13 @@ public class ArticleService {
                 .map(this::toDto).toList();
     }
 
+    @Transactional
+    public void linkTask(String tenantId, String articleId, String taskId) {
+        KnowledgeArticle article = findByTenant(tenantId, articleId);
+        article.setLinkedTaskId(taskId);
+        articleRepo.save(article);
+    }
+
     public StatistikDto getStatistik(String tenantId) {
         return StatistikDto.builder()
                 .gesamt(articleRepo.countByTenantId(tenantId))
