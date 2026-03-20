@@ -57,6 +57,51 @@
     .btn-secondary:hover { background: #f9fafb; }
     .meta { font-size: 0.75rem; color: #9ca3af; display: flex; gap: 1rem; margin-top: 0.5rem; }
     .detail-content { font-size: 0.9375rem; line-height: 1.8; color: #374151; white-space: pre-wrap; margin: 1.5rem 0; }
+
+    /* Chat */
+    .chat-layout { display: flex; height: calc(100vh - 3rem); gap: 0; }
+    .sessions-panel { width: 240px; background: #fff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; flex-shrink: 0; border-radius: 0.75rem 0 0 0.75rem; overflow: hidden; }
+    .sessions-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; border-bottom: 1px solid #e5e7eb; }
+    .sessions-header h3 { font-size: 0.875rem; font-weight: 600; }
+    .session-list { flex: 1; overflow-y: auto; }
+    .session-item { display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 0.75rem; cursor: pointer; border-bottom: 1px solid #f3f4f6; font-size: 0.8125rem; }
+    .session-item:hover { background: #f9fafb; }
+    .session-item.active-session { background: #eff6ff; border-left: 3px solid #006EC7; }
+    .session-title-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn-del { border: none; background: none; color: #d1d5db; cursor: pointer; font-size: 1rem; padding: 0; }
+    .btn-del:hover { color: #dc2626; }
+    .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #fafafa; border-radius: 0 0.75rem 0.75rem 0; overflow: hidden; }
+    .chat-header-bar { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem; border-bottom: 1px solid #e5e7eb; background: #fff; }
+    .chat-header-bar h2 { font-size: 1rem; font-weight: 600; flex: 1; }
+    .messages-area { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .empty-chat { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: #9ca3af; }
+    .empty-chat-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .message { display: flex; }
+    .message.user-msg { justify-content: flex-end; }
+    .message.assistant-msg { justify-content: flex-start; }
+    .message-bubble { max-width: 75%; padding: 0.75rem 1rem; border-radius: 1rem; font-size: 0.875rem; line-height: 1.6; white-space: pre-wrap; }
+    .user-msg .message-bubble { background: #006EC7; color: #fff; border-bottom-right-radius: 0.25rem; }
+    .assistant-msg .message-bubble { background: #fff; color: #1f2937; border-bottom-left-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .typing-indicator { display: flex; gap: 0.25rem; padding: 0.75rem 1.25rem; }
+    .typing-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #9ca3af; animation: tbounce 1.4s infinite ease-in-out both; }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes tbounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    .chat-input-area { display: flex; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background: #fff; }
+    .chat-input-area input { flex: 1; padding: 0.625rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.875rem; }
+    .chat-input-area input:focus { outline: none; border-color: #006EC7; box-shadow: 0 0 0 3px rgba(0,110,199,0.1); }
+    .chat-error { padding: 0.5rem 1.5rem; background: #fef2f2; color: #dc2626; font-size: 0.8125rem; }
+
+    /* Kategorien */
+    .kat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 768px) { .kat-grid { grid-template-columns: 1fr; } }
+    .kat-section-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+    .kat-add-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .kat-add-row input { flex: 1; padding: 0.625rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.875rem; }
+    .kat-add-row input:focus { outline: none; border-color: #006EC7; box-shadow: 0 0 0 3px rgba(0,110,199,0.1); }
+    .kat-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 0.75rem; background: #f9fafb; border-radius: 0.5rem; margin-bottom: 0.5rem; }
+    .kat-item-name { font-size: 0.875rem; font-weight: 500; flex: 1; }
+    .tag-badge { padding: 0.2rem 0.6rem; background: #dbeafe; color: #1e40af; font-size: 0.75rem; font-weight: 500; border-radius: 1rem; }
   </style>
 </head>
 <body>
@@ -83,10 +128,18 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
         Wissensdatenbank
       </button>
+      <button class="nav-item" id="nav-chat" onclick="showPage('chat')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Wissenschat
+      </button>
       <div class="nav-section">Aktionen</div>
       <button class="nav-item" id="nav-neu" onclick="showPage('neu')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Neuer Artikel
+      </button>
+      <button class="nav-item" id="nav-kategorien" onclick="showPage('kategorien')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Kategorien
       </button>
     </nav>
   </aside>
@@ -150,6 +203,61 @@
         <a href="#" style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1rem; display: inline-block" onclick="showPage('artikel'); return false;">&larr; Zurueck</a>
         <div class="card" id="detail-content"></div>
       </div>
+
+      <!-- Wissenschat -->
+      <div id="page-chat" class="page">
+        <div class="chat-layout">
+          <div class="sessions-panel">
+            <div class="sessions-header">
+              <h3>Unterhaltungen</h3>
+            </div>
+            <div style="padding: 0.75rem">
+              <button class="btn" style="width: 100%; font-size: 0.8125rem" onclick="chatNewSession()">+ Neue Unterhaltung</button>
+            </div>
+            <div class="session-list" id="chat-sessions"></div>
+          </div>
+          <div class="chat-main">
+            <div class="chat-header-bar">
+              <h2 id="chat-title">Wissenschat</h2>
+            </div>
+            <div class="messages-area" id="chat-messages">
+              <div class="empty-chat" id="chat-empty">
+                <div class="empty-chat-icon">&#128172;</div>
+                <h3 style="font-size: 1.125rem; font-weight: 600; color: #6b7280; margin-bottom: 0.5rem">Willkommen im Wissenschat</h3>
+                <p style="font-size: 0.875rem; max-width: 400px; line-height: 1.6">Stellen Sie Fragen zu Ihrer Wissensdatenbank und erhalten Sie KI-gestuetzte Antworten auf Basis Ihrer Artikel.</p>
+              </div>
+            </div>
+            <div id="chat-error" class="chat-error" style="display:none"></div>
+            <div class="chat-input-area">
+              <input type="text" id="chat-input" placeholder="Stellen Sie eine Frage..." onkeydown="if(event.key==='Enter')chatSend()">
+              <button class="btn" onclick="chatSend()">Senden</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kategorien -->
+      <div id="page-kategorien" class="page">
+        <div style="margin-bottom: 1.5rem"><h1 style="font-size: 1.25rem; font-weight: 600">Kategorien &amp; Tags verwalten</h1></div>
+        <div class="kat-grid">
+          <div class="card">
+            <h2 class="kat-section-title">Kategorien</h2>
+            <div class="kat-add-row">
+              <input type="text" id="kat-new-name" placeholder="Neue Kategorie..." onkeydown="if(event.key==='Enter')katAddCategory()">
+              <button class="btn" onclick="katAddCategory()">Hinzufuegen</button>
+            </div>
+            <div id="kat-list"></div>
+          </div>
+          <div class="card">
+            <h2 class="kat-section-title">Tags</h2>
+            <div class="kat-add-row">
+              <input type="text" id="tag-new-name" placeholder="Neuer Tag..." onkeydown="if(event.key==='Enter')katAddTag()">
+              <button class="btn" onclick="katAddTag()">Hinzufuegen</button>
+            </div>
+            <div id="tag-list"></div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 
@@ -185,6 +293,8 @@
       if (name === 'startseite') loadStartseite();
       if (name === 'artikel') { loadArticles(); loadKategorien(); }
       if (name === 'neu') { document.getElementById('form-title').textContent = 'Neuer Artikel'; document.getElementById('edit-id').value = ''; document.getElementById('f-titel').value = ''; document.getElementById('f-inhalt').value = ''; document.getElementById('f-kategorie').value = ''; document.getElementById('f-autor').value = ''; }
+      if (name === 'chat') { chatLoadSessions(); }
+      if (name === 'kategorien') { katLoadCategories(); katLoadTags(); }
     }
 
     function loadStartseite() {
@@ -267,15 +377,150 @@
 
     function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-    // URL-basiertes Routing: /artikel -> showPage('artikel'), /chat -> nicht verfuegbar etc.
+    // ========== Chat ==========
+    const CHAT_API = '/api/chat';
+    let chatSessionId = null;
+    let chatMessages = [];
+    let chatLoading = false;
+
+    function chatLoadSessions() {
+      fetch(CHAT_API + '/sessions').then(r => r.json()).then(sessions => {
+        const el = document.getElementById('chat-sessions');
+        if (!sessions.length) { el.innerHTML = '<div style="text-align:center;padding:1.5rem 0.75rem;color:#9ca3af;font-size:0.8125rem">Keine Unterhaltungen</div>'; return; }
+        el.innerHTML = sessions.map(s =>
+          '<div class="session-item' + (s.id === chatSessionId ? ' active-session' : '') + '" onclick="chatSelectSession(\'' + s.id + '\',\'' + esc(s.title || 'Unterhaltung') + '\')">' +
+          '<span class="session-title-text">' + esc(s.title || 'Unterhaltung') + '</span>' +
+          '<button class="btn-del" onclick="chatDeleteSession(\'' + s.id + '\',event)" title="Loeschen">&times;</button></div>'
+        ).join('');
+      }).catch(() => {});
+    }
+
+    function chatSelectSession(id, title) {
+      chatSessionId = id;
+      document.getElementById('chat-title').textContent = title;
+      document.getElementById('chat-empty').style.display = 'none';
+      fetch(CHAT_API + '/sessions/' + id + '/messages').then(r => r.json()).then(msgs => {
+        chatMessages = msgs;
+        chatRenderMessages();
+      }).catch(() => {});
+      chatLoadSessions();
+    }
+
+    function chatNewSession() {
+      chatSessionId = null;
+      chatMessages = [];
+      document.getElementById('chat-title').textContent = 'Wissenschat';
+      document.getElementById('chat-messages').innerHTML = '<div class="empty-chat" id="chat-empty"><div class="empty-chat-icon">&#128172;</div><h3 style="font-size:1.125rem;font-weight:600;color:#6b7280;margin-bottom:0.5rem">Willkommen im Wissenschat</h3><p style="font-size:0.875rem;max-width:400px;line-height:1.6">Stellen Sie Fragen zu Ihrer Wissensdatenbank.</p></div>';
+      document.getElementById('chat-error').style.display = 'none';
+    }
+
+    function chatDeleteSession(id, event) {
+      event.stopPropagation();
+      if (!confirm('Unterhaltung loeschen?')) return;
+      fetch(CHAT_API + '/sessions/' + id, { method: 'DELETE' }).then(() => {
+        if (chatSessionId === id) chatNewSession();
+        chatLoadSessions();
+      }).catch(() => {});
+    }
+
+    function chatSend() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text || chatLoading) return;
+      input.value = '';
+      chatLoading = true;
+      document.getElementById('chat-error').style.display = 'none';
+      document.getElementById('chat-empty').style.display = 'none';
+      chatMessages.push({ role: 'user', content: text });
+      chatRenderMessages();
+      // Show typing
+      const area = document.getElementById('chat-messages');
+      area.innerHTML += '<div class="message assistant-msg" id="chat-typing"><div class="message-bubble typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>';
+      area.scrollTop = area.scrollHeight;
+
+      fetch(CHAT_API + '/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: chatSessionId, message: text })
+      }).then(r => { if (!r.ok) throw new Error('Fehler'); return r.json(); }).then(resp => {
+        chatSessionId = resp.sessionId;
+        document.getElementById('chat-title').textContent = resp.sessionTitle || 'Wissenschat';
+        chatMessages.push({ role: 'assistant', content: resp.content });
+        chatLoading = false;
+        chatRenderMessages();
+        chatLoadSessions();
+      }).catch(err => {
+        chatLoading = false;
+        const typing = document.getElementById('chat-typing');
+        if (typing) typing.remove();
+        document.getElementById('chat-error').textContent = 'Fehler bei der Verarbeitung. Bitte versuchen Sie es erneut.';
+        document.getElementById('chat-error').style.display = 'block';
+      });
+    }
+
+    function chatRenderMessages() {
+      const area = document.getElementById('chat-messages');
+      area.innerHTML = chatMessages.map(m =>
+        '<div class="message ' + (m.role === 'user' ? 'user-msg' : 'assistant-msg') + '">' +
+        '<div class="message-bubble">' + esc(m.content) + '</div></div>'
+      ).join('');
+      area.scrollTop = area.scrollHeight;
+    }
+
+    // ========== Kategorien ==========
+    const KAT_API = '/api/kategorien';
+    const TAG_API = '/api/artikel/tags';
+
+    function katLoadCategories() {
+      fetch(KAT_API).then(r => r.json()).then(cats => {
+        const el = document.getElementById('kat-list');
+        if (!cats.length) { el.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#9ca3af;font-size:0.875rem">Keine Kategorien vorhanden.</div>'; return; }
+        el.innerHTML = cats.map(c =>
+          '<div class="kat-item"><span class="kat-item-name">' + esc(c.name) + '</span>' +
+          '<button class="btn-del" onclick="katDeleteCategory(\'' + c.id + '\')" title="Loeschen">&times;</button></div>'
+        ).join('');
+      }).catch(() => { document.getElementById('kat-list').innerHTML = '<div style="text-align:center;padding:1.5rem;color:#9ca3af">Kategorien konnten nicht geladen werden.</div>'; });
+    }
+
+    function katLoadTags() {
+      fetch(TAG_API).then(r => r.json()).then(tags => {
+        const el = document.getElementById('tag-list');
+        if (!tags.length) { el.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#9ca3af;font-size:0.875rem">Keine Tags vorhanden.</div>'; return; }
+        el.innerHTML = tags.map(t => '<div class="kat-item"><span class="tag-badge">' + esc(typeof t === 'string' ? t : t.name) + '</span></div>').join('');
+      }).catch(() => { document.getElementById('tag-list').innerHTML = '<div style="text-align:center;padding:1.5rem;color:#9ca3af">Tags konnten nicht geladen werden.</div>'; });
+    }
+
+    function katAddCategory() {
+      const input = document.getElementById('kat-new-name');
+      const name = input.value.trim();
+      if (!name) return;
+      fetch(KAT_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name }) })
+        .then(r => { if (!r.ok) throw new Error(); input.value = ''; katLoadCategories(); })
+        .catch(() => alert('Fehler beim Erstellen'));
+    }
+
+    function katDeleteCategory(id) {
+      if (!confirm('Kategorie wirklich loeschen?')) return;
+      fetch(KAT_API + '/' + id, { method: 'DELETE' }).then(() => katLoadCategories()).catch(() => {});
+    }
+
+    function katAddTag() {
+      var input = document.getElementById('tag-new-name');
+      var name = input.value.trim();
+      if (!name) return;
+      fetch(TAG_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(name) })
+        .then(function(r) { if (!r.ok) throw new Error(); input.value = ''; katLoadTags(); })
+        .catch(function() { alert('Fehler beim Erstellen'); });
+    }
+
+    // URL-basiertes Routing
     function initFromUrl() {
       var path = window.location.pathname.replace(/^\/+|\/+$/g, '');
       var pageMap = {
         '': 'startseite',
         'artikel': 'artikel',
         'artikel/neu': 'neu',
-        'chat': 'startseite',
-        'kategorien': 'startseite'
+        'chat': 'chat',
+        'kategorien': 'kategorien'
       };
       var page = pageMap[path] || 'startseite';
       showPage(page);
