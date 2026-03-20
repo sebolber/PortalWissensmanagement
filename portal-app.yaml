@@ -2,8 +2,8 @@
 # Diese Datei muss im Root-Verzeichnis des App-Repositories liegen.
 
 name: Wissensmanagement
-version: 1.0.0
-description: Wissensmanagement-App fuer das Health Portal - Hello World Test
+version: 1.1.0
+description: Wissensmanagement-App fuer das Health Portal mit Startseite und Feature-Uebersicht
 
 dockerfile: Dockerfile
 
