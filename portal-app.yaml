@@ -4,6 +4,8 @@ name: Wissensmanagement
 version: 3.0.0
 description: Wissensdatenbank mit RAG-Chat, LLM-Integration, Artikelverwaltung und Volltextsuche
 
+branch: claude/add-git-app-installer-JFq86
+
 dockerfile: Dockerfile
 
 port: 8080
