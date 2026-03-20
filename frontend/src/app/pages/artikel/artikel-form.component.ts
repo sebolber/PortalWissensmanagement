@@ -3,45 +3,54 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ArtikelService } from '../../services/artikel.service';
+import { Category, Tag } from '../../models/artikel.model';
 
 @Component({
   selector: 'app-artikel-form',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   template: `
-    <a [routerLink]="editId ? '/artikel/' + editId : '/artikel'"
-       style="display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem">
-      &larr; Zurueck
-    </a>
+    <a [routerLink]="editId ? '/artikel/' + editId : '/artikel'" class="back-link">&larr; Zurueck</a>
 
     <div class="card">
-      <h1 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem">
-        {{ editId ? 'Artikel bearbeiten' : 'Neuer Artikel' }}
-      </h1>
+      <h1 class="form-title">{{ editId ? 'Artikel bearbeiten' : 'Neuer Artikel' }}</h1>
 
-      <form (ngSubmit)="onSubmit()" style="display: flex; flex-direction: column; gap: 1.25rem">
-        <div>
+      <form (ngSubmit)="onSubmit()" class="form-grid">
+        <div class="form-group">
           <label>Titel *</label>
-          <input type="text" [(ngModel)]="titel" name="titel" required placeholder="Titel des Artikels">
+          <input type="text" [(ngModel)]="title" name="title" required placeholder="Titel des Artikels">
         </div>
 
-        <div style="display: flex; gap: 1rem">
-          <div style="flex: 1">
+        <div class="form-group">
+          <label>Zusammenfassung</label>
+          <input type="text" [(ngModel)]="summary" name="summary" placeholder="Kurze Zusammenfassung (optional)">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
             <label>Kategorie</label>
-            <input type="text" [(ngModel)]="kategorie" name="kategorie" placeholder="z.B. Anleitungen, Compliance">
+            <select [(ngModel)]="categoryId" name="categoryId">
+              <option value="">Keine Kategorie</option>
+              <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+            </select>
           </div>
-          <div style="flex: 1">
-            <label>Autor</label>
-            <input type="text" [(ngModel)]="autor" name="autor" placeholder="Name des Autors">
+          <div class="form-group">
+            <label>Tags (kommagetrennt)</label>
+            <input type="text" [(ngModel)]="tagsInput" name="tags" placeholder="z.B. Anleitung, Datenschutz">
           </div>
         </div>
 
-        <div>
+        <div class="form-group">
           <label>Inhalt *</label>
-          <textarea [(ngModel)]="inhalt" name="inhalt" required rows="12" placeholder="Artikelinhalt..."></textarea>
+          <textarea [(ngModel)]="content" name="content" required rows="16" placeholder="Artikelinhalt..."></textarea>
         </div>
 
-        <div style="display: flex; gap: 0.75rem; justify-content: flex-end">
+        <div *ngIf="editId" class="form-group">
+          <label>Aenderungsnotiz</label>
+          <input type="text" [(ngModel)]="changeNote" name="changeNote" placeholder="Was wurde geaendert?">
+        </div>
+
+        <div class="form-actions">
           <a [routerLink]="editId ? '/artikel/' + editId : '/artikel'" class="btn btn-secondary">Abbrechen</a>
           <button type="submit" class="btn btn-primary" [disabled]="saving">
             {{ saving ? 'Speichert...' : (editId ? 'Speichern' : 'Erstellen') }}
@@ -50,45 +59,73 @@ import { ArtikelService } from '../../services/artikel.service';
       </form>
     </div>
   `,
+  styles: [`
+    .back-link { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; color: #6b7280; margin-bottom: 1rem; text-decoration: none; }
+    .back-link:hover { color: #006EC7; }
+    .form-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; }
+    .form-grid { display: flex; flex-direction: column; gap: 1.25rem; }
+    .form-row { display: flex; gap: 1rem; }
+    .form-row .form-group { flex: 1; }
+    .form-group label { display: block; font-size: 0.8125rem; font-weight: 500; color: #6b7280; margin-bottom: 0.375rem; }
+    .form-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+    @media (max-width: 640px) { .form-row { flex-direction: column; } }
+  `]
 })
 export class ArtikelFormComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private artikelService = inject(ArtikelService);
+  private svc = inject(ArtikelService);
 
   editId: string | null = null;
-  titel = '';
-  inhalt = '';
-  kategorie = '';
-  autor = '';
+  title = '';
+  content = '';
+  summary = '';
+  categoryId = '';
+  tagsInput = '';
+  changeNote = '';
+  categories: Category[] = [];
   saving = false;
 
   ngOnInit(): void {
+    this.svc.listCategories().subscribe({ next: c => this.categories = c });
     this.editId = this.route.snapshot.paramMap.get('id');
     if (this.editId) {
-      this.artikelService.getById(this.editId).subscribe({
-        next: (a) => {
-          this.titel = a.titel;
-          this.inhalt = a.inhalt;
-          this.kategorie = a.kategorie || '';
-          this.autor = a.autor || '';
+      this.svc.getById(this.editId, false).subscribe({
+        next: a => {
+          this.title = a.title;
+          this.content = a.content;
+          this.summary = a.summary || '';
+          this.categoryId = a.category?.id || '';
+          this.tagsInput = a.tags.map(t => t.name).join(', ');
         }
       });
     }
   }
 
   onSubmit(): void {
-    if (!this.titel.trim() || !this.inhalt.trim()) return;
+    if (!this.title.trim() || !this.content.trim()) return;
     this.saving = true;
-    const data = { titel: this.titel, inhalt: this.inhalt, kategorie: this.kategorie, autor: this.autor };
 
-    const request = this.editId
-      ? this.artikelService.update(this.editId, data)
-      : this.artikelService.create(data);
+    const tagNames = this.tagsInput.split(',').map(t => t.trim()).filter(t => t);
+    const data: any = {
+      title: this.title,
+      content: this.content,
+      summary: this.summary || null,
+      categoryId: this.categoryId || null,
+      tagNames,
+    };
 
-    request.subscribe({
-      next: (a) => this.router.navigate(['/artikel', a.id]),
-      error: () => this.saving = false
-    });
+    if (this.editId) {
+      data.changeNote = this.changeNote;
+      this.svc.update(this.editId, data).subscribe({
+        next: a => this.router.navigate(['/artikel', a.id]),
+        error: () => this.saving = false,
+      });
+    } else {
+      this.svc.create(data).subscribe({
+        next: a => this.router.navigate(['/artikel', a.id]),
+        error: () => this.saving = false,
+      });
+    }
   }
 }

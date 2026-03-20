@@ -1,43 +1,92 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Artikel } from '../models/artikel.model';
+import { Article, ArticlePage, ArticleVersion, Category, Tag, Statistik } from '../models/artikel.model';
 
 @Injectable({ providedIn: 'root' })
 export class ArtikelService {
-
-  private basePath = '/api/artikel';
+  private readonly base = '/api/artikel';
+  private readonly catBase = '/api/kategorien';
+  private readonly tagBase = '/api/tags';
 
   constructor(private http: HttpClient) {}
 
-  getAll(kategorie?: string, q?: string): Observable<Artikel[]> {
-    const params: Record<string, string> = {};
-    if (kategorie) params['kategorie'] = kategorie;
-    if (q) params['q'] = q;
-    return this.http.get<Artikel[]>(this.basePath, { params });
+  list(params: {
+    status?: string; q?: string; categoryId?: string;
+    page?: number; size?: number; sortBy?: string; sortDir?: string;
+  } = {}): Observable<ArticlePage> {
+    let p = new HttpParams();
+    if (params.status) p = p.set('status', params.status);
+    if (params.q) p = p.set('q', params.q);
+    if (params.categoryId) p = p.set('categoryId', params.categoryId);
+    p = p.set('page', String(params.page ?? 0));
+    p = p.set('size', String(params.size ?? 20));
+    if (params.sortBy) p = p.set('sortBy', params.sortBy);
+    if (params.sortDir) p = p.set('sortDir', params.sortDir);
+    return this.http.get<ArticlePage>(this.base, { params: p });
   }
 
-  getById(id: string): Observable<Artikel> {
-    return this.http.get<Artikel>(`${this.basePath}/${id}`);
+  getById(id: string, trackView = true): Observable<Article> {
+    return this.http.get<Article>(`${this.base}/${id}?trackView=${trackView}`);
   }
 
-  getKategorien(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.basePath}/kategorien`);
+  create(data: any): Observable<Article> {
+    return this.http.post<Article>(this.base, data);
   }
 
-  create(artikel: Partial<Artikel>): Observable<Artikel> {
-    return this.http.post<Artikel>(this.basePath, artikel);
+  update(id: string, data: any): Observable<Article> {
+    return this.http.put<Article>(`${this.base}/${id}`, data);
   }
 
-  update(id: string, artikel: Partial<Artikel>): Observable<Artikel> {
-    return this.http.put<Artikel>(`${this.basePath}/${id}`, artikel);
+  publish(id: string): Observable<Article> {
+    return this.http.put<Article>(`${this.base}/${id}/publish`, {});
+  }
+
+  archive(id: string): Observable<Article> {
+    return this.http.put<Article>(`${this.base}/${id}/archive`, {});
   }
 
   delete(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.basePath}/${id}`);
+    return this.http.delete<void>(`${this.base}/${id}`);
   }
 
-  getStatistik(): Observable<{ gesamt: number; kategorien: number }> {
-    return this.http.get<{ gesamt: number; kategorien: number }>(`${this.basePath}/statistik`);
+  getVersions(id: string): Observable<ArticleVersion[]> {
+    return this.http.get<ArticleVersion[]>(`${this.base}/${id}/versionen`);
+  }
+
+  submitFeedback(id: string, rating: number, comment?: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/${id}/feedback`, { rating, comment });
+  }
+
+  getStatistik(): Observable<Statistik> {
+    return this.http.get<Statistik>(`${this.base}/statistik`);
+  }
+
+  getNewest(limit = 5): Observable<Article[]> {
+    return this.http.get<Article[]>(`${this.base}/neueste?limit=${limit}`);
+  }
+
+  getPopular(limit = 5): Observable<Article[]> {
+    return this.http.get<Article[]>(`${this.base}/beliebt?limit=${limit}`);
+  }
+
+  listCategories(): Observable<Category[]> {
+    return this.http.get<Category[]>(this.catBase);
+  }
+
+  createCategory(data: Partial<Category>): Observable<Category> {
+    return this.http.post<Category>(this.catBase, data);
+  }
+
+  deleteCategory(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.catBase}/${id}`);
+  }
+
+  listTags(): Observable<Tag[]> {
+    return this.http.get<Tag[]>(this.tagBase);
+  }
+
+  createTag(name: string): Observable<Tag> {
+    return this.http.post<Tag>(this.tagBase, { name });
   }
 }

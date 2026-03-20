@@ -6,5 +6,7 @@ export const routes: Routes = [
   { path: 'artikel/neu', loadComponent: () => import('./pages/artikel/artikel-form.component').then(m => m.ArtikelFormComponent) },
   { path: 'artikel/:id', loadComponent: () => import('./pages/artikel/artikel-detail.component').then(m => m.ArtikelDetailComponent) },
   { path: 'artikel/:id/bearbeiten', loadComponent: () => import('./pages/artikel/artikel-form.component').then(m => m.ArtikelFormComponent) },
+  { path: 'chat', loadComponent: () => import('./pages/chat/chat.component').then(m => m.ChatComponent) },
+  { path: 'kategorien', loadComponent: () => import('./pages/kategorien/kategorien.component').then(m => m.KategorienComponent) },
   { path: '**', redirectTo: '' },
 ];
