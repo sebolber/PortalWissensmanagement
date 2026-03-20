@@ -8,37 +8,111 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Fira Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             min-height: 100vh;
+            background: #f5f5f4;
+            color: #1f2937;
+        }
+        header {
             background: linear-gradient(135deg, #006EC7 0%, #004a8a 100%);
             color: #fff;
+            padding: 2rem 2rem 3rem;
         }
-        .container {
+        header h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
+        header p { font-size: 0.95rem; opacity: 0.85; }
+        .welcome-card {
+            max-width: 800px;
+            margin: -1.5rem auto 2rem;
+            background: #fff;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+        .welcome-card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #006EC7;
+            margin-bottom: 0.5rem;
+        }
+        .welcome-card p {
+            font-size: 0.95rem;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+        .features {
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            padding: 0 1rem;
+        }
+        .feature-card {
+            background: #fff;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+            font-size: 1.25rem;
+        }
+        .feature-card h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .feature-card p {
+            font-size: 0.85rem;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+        .version-badge {
             text-align: center;
-            padding: 3rem;
-            background: rgba(255,255,255,0.1);
-            border-radius: 1rem;
-            backdrop-filter: blur(10px);
-        }
-        h1 { font-size: 2.5rem; margin-bottom: 1rem; }
-        p { font-size: 1.2rem; opacity: 0.9; }
-        .badge {
-            display: inline-block;
-            margin-top: 1.5rem;
-            padding: 0.5rem 1.5rem;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2rem;
-            font-size: 0.9rem;
+            padding: 1rem;
+            font-size: 0.8rem;
+            color: #9ca3af;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Hello World!</h1>
-        <p>Wissensmanagement-App wurde erfolgreich installiert.</p>
-        <div class="badge">Health Portal App v1.0.0</div>
+    <header>
+        <h1>Wissensmanagement</h1>
+        <p>Health Portal App</p>
+    </header>
+
+    <div class="welcome-card">
+        <h2>Willkommen im Wissensmanagement</h2>
+        <p>
+            Hier finden Sie alle wichtigen Informationen, Dokumentationen und Wissensbeitraege
+            Ihrer Organisation an einem zentralen Ort. Nutzen Sie die Suchfunktion, um schnell
+            relevante Inhalte zu finden, oder durchsuchen Sie die Kategorien.
+        </p>
     </div>
+
+    <div class="features">
+        <div class="feature-card">
+            <div class="feature-icon" style="background: #dbeafe; color: #2563eb;">&#128218;</div>
+            <h3>Wissensdatenbank</h3>
+            <p>Zentrale Ablage fuer Dokumentationen, Anleitungen und Fachinformationen.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon" style="background: #d1fae5; color: #059669;">&#128269;</div>
+            <h3>Volltextsuche</h3>
+            <p>Finden Sie relevante Inhalte schnell mit der integrierten Suchfunktion.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon" style="background: #fef3c7; color: #d97706;">&#128101;</div>
+            <h3>Kollaboration</h3>
+            <p>Arbeiten Sie gemeinsam an Wissensbeitraegen und teilen Sie Ihr Fachwissen.</p>
+        </div>
+    </div>
+
+    <div class="version-badge">Wissensmanagement v1.0.0</div>
 </body>
 </html>
