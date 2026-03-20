@@ -18,6 +18,7 @@ RUN mvn package -DskipTests -B
 
 # Stage 3: Runtime
 FROM eclipse-temurin:21-jre-alpine
+LABEL app.version="2.0.1"
 RUN apk add --no-cache postgresql-client
 WORKDIR /app
 COPY --from=backend-build /app/backend/target/*.jar app.jar
