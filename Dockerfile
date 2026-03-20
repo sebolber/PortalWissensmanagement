@@ -1,27 +1,17 @@
-# Stage 1: Build Angular Frontend
-FROM node:20-alpine AS frontend-build
-WORKDIR /app/frontend
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm install
-COPY frontend/ ./
-RUN npx ng build --configuration production
-
-# Stage 2: Build Spring Boot Backend
+# Stage 1: Build Spring Boot Backend (includes static HTML)
 FROM maven:3.9-eclipse-temurin-21-alpine AS backend-build
-WORKDIR /app/backend
+WORKDIR /app
 COPY backend/pom.xml .
 RUN mvn dependency:go-offline -B
 COPY backend/src ./src
-# Copy Angular build output into Spring Boot static resources
-COPY --from=frontend-build /app/frontend/dist/browser/ ./src/main/resources/static/
 RUN mvn package -DskipTests -B
 
-# Stage 3: Runtime
+# Stage 2: Runtime
 FROM eclipse-temurin:21-jre-alpine
-LABEL app.version="2.0.1"
+LABEL app.version="2.1.0"
 RUN apk add --no-cache postgresql-client
 WORKDIR /app
-COPY --from=backend-build /app/backend/target/*.jar app.jar
+COPY --from=backend-build /app/target/*.jar app.jar
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 EXPOSE 8080

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Wissensmanagement</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #f5f5f4; color: #1f2937; min-height: 100vh; }
+    header { background: linear-gradient(135deg, #006EC7 0%, #004a8a 100%); color: #fff; padding: 0 1rem; }
+    .header-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: center; gap: 1rem; height: 56px; }
+    .logo { display: flex; align-items: center; gap: 0.625rem; color: #fff; text-decoration: none; font-weight: 600; }
+    .logo-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.2); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
+    nav a { color: rgba(255,255,255,0.8); text-decoration: none; padding: 0.375rem 0.75rem; border-radius: 0.375rem; font-size: 0.875rem; }
+    nav a:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    nav a.active { background: rgba(255,255,255,0.2); color: #fff; }
+    main { max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem; }
+    .card { background: #fff; border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 1.5rem; margin-bottom: 1rem; }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.25rem; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; border: none; cursor: pointer; background: #006EC7; color: #fff; text-decoration: none; }
+    .btn:hover { background: #004a8a; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat { text-align: center; padding: 1.25rem; }
+    .stat-value { font-size: 2rem; font-weight: 700; color: #006EC7; }
+    .stat-label { font-size: 0.8125rem; color: #6b7280; }
+    .article { text-decoration: none; color: inherit; display: block; transition: box-shadow 0.15s; }
+    .article:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .article h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .article p { font-size: 0.8125rem; color: #6b7280; line-height: 1.5; }
+    .tag { padding: 0.25rem 0.75rem; background: #dbeafe; color: #1e40af; font-size: 0.6875rem; font-weight: 500; border-radius: 1rem; }
+    #articles { display: flex; flex-direction: column; gap: 0.75rem; }
+    .search-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end; margin-bottom: 1.5rem; }
+    .search-bar input, .search-bar select { padding: 0.625rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-size: 0.875rem; }
+    .search-bar input:focus, .search-bar select:focus { outline: none; border-color: #006EC7; box-shadow: 0 0 0 3px rgba(0,110,199,0.1); }
+    label { display: block; font-size: 0.8125rem; font-weight: 500; color: #6b7280; margin-bottom: 0.375rem; }
+    .hidden { display: none; }
+    /* Pages */
+    .page { display: none; }
+    .page.active { display: block; }
+    /* Form */
+    .form-group { margin-bottom: 1.25rem; }
+    .form-group input, .form-group textarea { width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; font-family: inherit; font-size: 0.875rem; }
+    .form-group textarea { min-height: 200px; }
+    .form-actions { display: flex; gap: 0.75rem; justify-content: flex-end; }
+    .btn-secondary { background: #fff; color: #1f2937; border: 1px solid #e5e7eb; }
+    .btn-secondary:hover { background: #f9fafb; }
+    .meta { font-size: 0.75rem; color: #9ca3af; display: flex; gap: 1rem; margin-top: 0.5rem; }
+    .detail-content { font-size: 0.9375rem; line-height: 1.8; color: #374151; white-space: pre-wrap; margin: 1.5rem 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <a href="#" class="logo" onclick="showPage('startseite'); return false;">
+        <span class="logo-icon">WM</span>
+        <span>Wissensmanagement</span>
+      </a>
+      <nav>
+        <a href="#" id="nav-startseite" class="active" onclick="showPage('startseite'); return false;">Startseite</a>
+        <a href="#" id="nav-artikel" onclick="showPage('artikel'); return false;">Wissensdatenbank</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Startseite -->
+    <div id="page-startseite" class="page active">
+      <div class="card" style="margin-bottom: 1.5rem">
+        <h1 style="font-size: 1.375rem; font-weight: 600; color: #006EC7; margin-bottom: 0.375rem">Willkommen im Wissensmanagement</h1>
+        <p style="color: #6b7280; font-size: 0.9375rem; line-height: 1.6">
+          Hier finden Sie alle wichtigen Informationen, Dokumentationen und Wissensbeitraege Ihrer Organisation an einem zentralen Ort.
+        </p>
+      </div>
+      <div class="stats">
+        <div class="card stat"><div class="stat-value" id="stat-artikel">-</div><div class="stat-label">Wissensbeitraege</div></div>
+        <div class="card stat"><div class="stat-value" id="stat-kategorien">-</div><div class="stat-label">Kategorien</div></div>
+        <div class="card stat"><a href="#" class="btn" style="width: 100%" onclick="showPage('neu'); return false;">+ Neuer Artikel</a></div>
+      </div>
+      <h2 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem">Neueste Beitraege</h2>
+      <div id="recent-articles"></div>
+    </div>
+
+    <!-- Artikelliste -->
+    <div id="page-artikel" class="page">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem">
+        <h1 style="font-size: 1.25rem; font-weight: 600">Wissensdatenbank</h1>
+        <a href="#" class="btn" onclick="showPage('neu'); return false;">+ Neuer Artikel</a>
+      </div>
+      <div class="card search-bar">
+        <div style="flex: 1; min-width: 200px"><label>Suche</label><input type="text" id="search-input" placeholder="Artikel durchsuchen..." oninput="loadArticles()"></div>
+        <div style="min-width: 160px"><label>Kategorie</label><select id="kategorie-filter" onchange="loadArticles()"><option value="">Alle</option></select></div>
+      </div>
+      <div id="articles"></div>
+    </div>
+
+    <!-- Neuer Artikel -->
+    <div id="page-neu" class="page">
+      <a href="#" style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1rem; display: inline-block" onclick="showPage('artikel'); return false;">&larr; Zurueck</a>
+      <div class="card">
+        <h1 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem" id="form-title">Neuer Artikel</h1>
+        <form onsubmit="saveArtikel(event)">
+          <input type="hidden" id="edit-id">
+          <div class="form-group"><label>Titel *</label><input type="text" id="f-titel" required placeholder="Titel des Artikels"></div>
+          <div style="display: flex; gap: 1rem">
+            <div class="form-group" style="flex:1"><label>Kategorie</label><input type="text" id="f-kategorie" placeholder="z.B. Anleitungen"></div>
+            <div class="form-group" style="flex:1"><label>Autor</label><input type="text" id="f-autor" placeholder="Name"></div>
+          </div>
+          <div class="form-group"><label>Inhalt *</label><textarea id="f-inhalt" required placeholder="Artikelinhalt..."></textarea></div>
+          <div class="form-actions">
+            <a href="#" class="btn btn-secondary" onclick="showPage('artikel'); return false;">Abbrechen</a>
+            <button type="submit" class="btn">Speichern</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Artikeldetail -->
+    <div id="page-detail" class="page">
+      <a href="#" style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1rem; display: inline-block" onclick="showPage('artikel'); return false;">&larr; Zurueck</a>
+      <div class="card" id="detail-content"></div>
+    </div>
+  </main>
+
+  <script>
+    const API = '/api/artikel';
+
+    function showPage(name) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-' + name).classList.add('active');
+      document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+      const navEl = document.getElementById('nav-' + name);
+      if (navEl) navEl.classList.add('active');
+      if (name === 'startseite') loadStartseite();
+      if (name === 'artikel') { loadArticles(); loadKategorien(); }
+      if (name === 'neu') { document.getElementById('form-title').textContent = 'Neuer Artikel'; document.getElementById('edit-id').value = ''; document.getElementById('f-titel').value = ''; document.getElementById('f-inhalt').value = ''; document.getElementById('f-kategorie').value = ''; document.getElementById('f-autor').value = ''; }
+    }
+
+    function loadStartseite() {
+      fetch(API + '/statistik').then(r => r.json()).then(s => {
+        document.getElementById('stat-artikel').textContent = s.gesamt;
+        document.getElementById('stat-kategorien').textContent = s.kategorien;
+      }).catch(() => { document.getElementById('stat-artikel').textContent = '0'; document.getElementById('stat-kategorien').textContent = '0'; });
+      fetch(API).then(r => r.json()).then(articles => {
+        const el = document.getElementById('recent-articles');
+        el.innerHTML = articles.slice(0, 5).map(a => articleCard(a)).join('');
+      }).catch(() => {});
+    }
+
+    function loadArticles() {
+      const q = document.getElementById('search-input').value;
+      const k = document.getElementById('kategorie-filter').value;
+      let url = API;
+      const params = [];
+      if (q) params.push('q=' + encodeURIComponent(q));
+      if (k) params.push('kategorie=' + encodeURIComponent(k));
+      if (params.length) url += '?' + params.join('&');
+      fetch(url).then(r => r.json()).then(articles => {
+        document.getElementById('articles').innerHTML = articles.length
+          ? articles.map(a => articleCard(a)).join('')
+          : '<div class="card" style="text-align:center;color:#6b7280;padding:3rem">Keine Artikel gefunden.</div>';
+      }).catch(() => {});
+    }
+
+    function loadKategorien() {
+      fetch(API + '/kategorien').then(r => r.json()).then(kats => {
+        const sel = document.getElementById('kategorie-filter');
+        const val = sel.value;
+        sel.innerHTML = '<option value="">Alle</option>' + kats.map(k => '<option value="' + k + '">' + k + '</option>').join('');
+        sel.value = val;
+      }).catch(() => {});
+    }
+
+    function articleCard(a) {
+      const text = a.inhalt ? (a.inhalt.length > 150 ? a.inhalt.substring(0, 150) + '...' : a.inhalt) : '';
+      const tag = a.kategorie ? '<span class="tag">' + esc(a.kategorie) + '</span>' : '';
+      return '<a href="#" class="card article" onclick="showDetail(\'' + a.id + '\'); return false;"><div style="display:flex;justify-content:space-between;align-items:start;gap:1rem"><div><h3>' + esc(a.titel) + '</h3><p>' + esc(text) + '</p></div>' + tag + '</div></a>';
+    }
+
+    function showDetail(id) {
+      fetch(API + '/' + id).then(r => r.json()).then(a => {
+        const tag = a.kategorie ? '<span class="tag">' + esc(a.kategorie) + '</span>' : '';
+        document.getElementById('detail-content').innerHTML =
+          '<div style="display:flex;justify-content:space-between;align-items:start;gap:1rem;margin-bottom:1rem"><div><h1 style="font-size:1.375rem;font-weight:600;margin-bottom:0.375rem">' + esc(a.titel) + '</h1><div class="meta"><span>Von ' + esc(a.autor || 'Unbekannt') + '</span></div></div>' + tag + '</div>' +
+          '<div class="detail-content">' + esc(a.inhalt || '') + '</div>' +
+          '<div style="display:flex;gap:0.75rem;padding-top:1.5rem;border-top:1px solid #e5e7eb"><a href="#" class="btn btn-secondary" onclick="editArtikel(\'' + a.id + '\'); return false;">Bearbeiten</a><a href="#" class="btn" style="background:#fff;color:#dc2626;border:1px solid #fecaca" onclick="deleteArtikel(\'' + a.id + '\'); return false;">Loeschen</a></div>';
+        showPage('detail');
+      }).catch(() => {});
+    }
+
+    function editArtikel(id) {
+      fetch(API + '/' + id).then(r => r.json()).then(a => {
+        document.getElementById('form-title').textContent = 'Artikel bearbeiten';
+        document.getElementById('edit-id').value = a.id;
+        document.getElementById('f-titel').value = a.titel;
+        document.getElementById('f-inhalt').value = a.inhalt || '';
+        document.getElementById('f-kategorie').value = a.kategorie || '';
+        document.getElementById('f-autor').value = a.autor || '';
+        showPage('neu');
+      }).catch(() => {});
+    }
+
+    function saveArtikel(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-id').value;
+      const data = { titel: document.getElementById('f-titel').value, inhalt: document.getElementById('f-inhalt').value, kategorie: document.getElementById('f-kategorie').value, autor: document.getElementById('f-autor').value };
+      const url = id ? API + '/' + id : API;
+      fetch(url, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+        .then(r => r.json()).then(a => showDetail(a.id)).catch(() => alert('Fehler beim Speichern'));
+    }
+
+    function deleteArtikel(id) {
+      if (!confirm('Artikel wirklich loeschen?')) return;
+      fetch(API + '/' + id, { method: 'DELETE' }).then(() => showPage('artikel')).catch(() => {});
+    }
+
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    // Init
+    loadStartseite();
+  </script>
+</body>
+</html>
