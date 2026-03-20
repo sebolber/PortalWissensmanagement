@@ -1,19 +1,12 @@
 # portal-app.yaml - Manifest fuer Health Portal Apps
 
 name: Wissensmanagement
-version: 2.0.0
+version: 2.2.0
 description: Wissensmanagement-App mit Wissensdatenbank, Artikelverwaltung und Volltextsuche
 
 dockerfile: Dockerfile
 
 port: 8080
-
-env:
-  DB_HOST: portal-db
-  DB_PORT: "5432"
-  DB_NAME: wissensmanagement
-  DB_USERNAME: portal
-  DB_PASSWORD: portal
 
 healthCheck: /api/artikel/statistik
 
