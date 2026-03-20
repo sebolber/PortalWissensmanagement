@@ -17,6 +17,27 @@ env:
   DB_USER: portal
   DB_PASS: portal
 
+pages:
+  - label: "Startseite"
+    route: "/"
+    icon: "home"
+  - label: "Wissensdatenbank"
+    route: "/artikel"
+    icon: "book"
+    useCase: "wissensmanagement-lesen"
+  - label: "Wissenschat"
+    route: "/chat"
+    icon: "chat"
+    useCase: "wissensmanagement-chat"
+  - label: "Neuer Artikel"
+    route: "/artikel/neu"
+    icon: "plus"
+    useCase: "wissensmanagement-schreiben"
+  - label: "Kategorien"
+    route: "/kategorien"
+    icon: "folder"
+    useCase: "wissensmanagement-admin"
+
 useCases:
   - key: wissensmanagement-lesen
     label: "Wissensmanagement - Lesen"
