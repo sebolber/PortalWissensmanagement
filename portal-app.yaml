@@ -1,7 +1,7 @@
 # portal-app.yaml - Manifest fuer Health Portal Apps
 
 name: Wissensmanagement
-version: 3.1.0
+version: 3.1.1
 description: Wissensdatenbank mit RAG-Chat, LLM-Integration, Artikelverwaltung und Volltextsuche
 
 branch: main
