@@ -31,6 +31,8 @@ public class ArticleController {
     private final UsageTrackingService usageService;
     private final SecurityHelper securityHelper;
     private final PermissionService permissionService;
+    private final HierarchyService hierarchyService;
+    private final SearchService searchService;
 
     public ArticleController(ArticleService articleService,
                               FeedbackService feedbackService,
@@ -38,7 +40,9 @@ public class ArticleController {
                               TaskIntegrationService taskService,
                               UsageTrackingService usageService,
                               SecurityHelper securityHelper,
-                              PermissionService permissionService) {
+                              PermissionService permissionService,
+                              HierarchyService hierarchyService,
+                              SearchService searchService) {
         this.articleService = articleService;
         this.feedbackService = feedbackService;
         this.llmService = llmService;
@@ -46,6 +50,8 @@ public class ArticleController {
         this.usageService = usageService;
         this.securityHelper = securityHelper;
         this.permissionService = permissionService;
+        this.hierarchyService = hierarchyService;
+        this.searchService = searchService;
     }
 
     @GetMapping

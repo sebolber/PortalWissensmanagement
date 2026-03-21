@@ -67,9 +67,12 @@ interface DisplayMessage {
               <div class="message-content" [style.white-space]="'pre-wrap'">{{ m.content }}</div>
               <div *ngIf="m.sources && m.sources.length > 0" class="sources">
                 <span class="sources-label">Quellen:</span>
-                <a *ngFor="let s of m.sources" [routerLink]="'/artikel/' + s.articleId" class="source-link">
-                  {{ s.title }}<span *ngIf="s.categoryName" class="source-cat"> ({{ s.categoryName }})</span>
-                </a>
+                <div class="source-list">
+                  <a *ngFor="let s of m.sources; let i = index" [routerLink]="'/artikel/' + s.articleId" class="source-link">
+                    <span class="source-num">[{{ i + 1 }}]</span>
+                    {{ s.title }}<span *ngIf="s.categoryName" class="source-cat"> &ndash; {{ s.categoryName }}</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -129,11 +132,13 @@ interface DisplayMessage {
     .dot:nth-child(1) { animation-delay: -0.32s; }
     .dot:nth-child(2) { animation-delay: -0.16s; }
     @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
-    .sources { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: center; }
-    .sources-label { font-size: 0.75rem; color: #6b7280; margin-right: 0.25rem; }
-    .source-link { font-size: 0.75rem; padding: 0.1rem 0.4rem; background: #eff6ff; border-radius: 0.25rem; color: #006EC7; text-decoration: none; }
-    .source-link:hover { background: #dbeafe; text-decoration: none; }
-    .source-cat { color: #9ca3af; }
+    .sources { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb; }
+    .sources-label { font-size: 0.75rem; color: #6b7280; display: block; margin-bottom: 0.25rem; font-weight: 500; }
+    .source-list { display: flex; flex-direction: column; gap: 0.125rem; }
+    .source-link { font-size: 0.75rem; padding: 0.25rem 0.5rem; background: #eff6ff; border-radius: 0.25rem; color: #006EC7; text-decoration: none; display: block; }
+    .source-link:hover { background: #dbeafe; }
+    .source-num { font-weight: 600; margin-right: 0.25rem; }
+    .source-cat { color: #9ca3af; font-size: 0.6875rem; }
     .error-bar { padding: 0.5rem 1.5rem; background: #fef2f2; color: #dc2626; font-size: 0.8125rem; border-top: 1px solid #fecaca; }
     .input-area { display: flex; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background: #fff; }
     .input-area input { flex: 1; }

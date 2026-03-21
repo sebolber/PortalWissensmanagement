@@ -8,8 +8,11 @@ export class ArtikelService {
   private readonly base = 'api/artikel';
   private readonly catBase = 'api/kategorien';
   private readonly tagBase = 'api/tags';
+  private readonly dictBase = 'api/diktat';
 
   constructor(private http: HttpClient) {}
+
+  // --- Article CRUD ---
 
   list(params: {
     status?: string; q?: string; categoryId?: string; groupingId?: string;
@@ -70,6 +73,37 @@ export class ArtikelService {
   getPopular(limit = 5): Observable<Article[]> {
     return this.http.get<Article[]>(`${this.base}/beliebt?limit=${limit}`);
   }
+
+  // --- Hierarchy ---
+
+  getTree(): Observable<ArticleTreeNode[]> {
+    return this.http.get<ArticleTreeNode[]>(`${this.base}/baum`);
+  }
+
+  getChildren(parentId: string): Observable<Article[]> {
+    return this.http.get<Article[]>(`${this.base}/${parentId}/kinder`);
+  }
+
+  getBreadcrumb(id: string): Observable<BreadcrumbItem[]> {
+    return this.http.get<BreadcrumbItem[]>(`${this.base}/${id}/breadcrumb`);
+  }
+
+  moveArticle(id: string, newParentId: string | null): Observable<void> {
+    return this.http.put<void>(`${this.base}/${id}/verschieben`, { newParentId });
+  }
+
+  reorderArticles(parentArticleId: string | null, orderedIds: string[]): Observable<void> {
+    return this.http.put<void>(`${this.base}/sortierung`, { parentArticleId, orderedIds });
+  }
+
+  // --- Search ---
+
+  search(query: string, mode: string = 'HYBRID', limit: number = 20): Observable<SearchResult[]> {
+    let p = new HttpParams().set('q', query).set('mode', mode).set('limit', String(limit));
+    return this.http.get<SearchResult[]>(`${this.base}/suche`, { params: p });
+  }
+
+  // --- Categories & Tags ---
 
   listCategories(): Observable<Category[]> {
     return this.http.get<Category[]>(this.catBase);

@@ -14,6 +14,16 @@ public class ArticleDto {
     private String content;
     private String summary;
     private ArticleStatus status;
+
+    // Hierarchy
+    private String parentArticleId;
+    private int sortOrder;
+    private String treePath;
+    private int depth;
+    private List<ArticleDto> children;
+    private List<BreadcrumbItem> breadcrumb;
+    private int childCount;
+
     private CategoryDto category;
     private GroupingDto grouping;
     private List<TagDto> tags;
@@ -29,4 +39,10 @@ public class ArticleDto {
     private double averageRating;
     private int ratingCount;
     private LocalDateTime lastUsedAt;
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class BreadcrumbItem {
+        private String id;
+        private String title;
+    }
 }

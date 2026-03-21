@@ -36,6 +36,15 @@ import { Category, Grouping } from '../../models/artikel.model';
 
         <div class="form-row">
           <div class="form-group">
+            <label>Uebergeordneter Artikel</label>
+            <select [(ngModel)]="parentArticleId" name="parentArticleId">
+              <option value="">Kein (Root-Artikel)</option>
+              <option *ngFor="let node of flatTree" [value]="node.id" [disabled]="node.id === editId">
+                {{ getTreePrefix(node.depth) }}{{ node.title }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
             <label>Kategorie</label>
             <select [(ngModel)]="categoryId" name="categoryId">
               <option value="">Keine Kategorie</option>
@@ -68,6 +77,36 @@ import { Category, Grouping } from '../../models/artikel.model';
           </div>
           <div #contentEditor contenteditable="true" class="rich-editor" (input)="onContentInput()"
                [innerHTML]="contentHtml" style="resize: vertical; overflow: auto;"></div>
+        </div>
+
+        <!-- Dictation area -->
+        <div *ngIf="isDictating" class="dictation-area card">
+          <div class="dictation-indicator">
+            <span class="recording-dot"></span>
+            Diktat aktiv &ndash; sprechen Sie...
+          </div>
+          <div class="dictation-text" *ngIf="dictationText">{{ dictationText }}</div>
+        </div>
+
+        <!-- LLM structuring preview -->
+        <div *ngIf="structuredPreview" class="card structure-preview">
+          <h3>KI-Vorschlag</h3>
+          <div class="preview-section" *ngIf="structuredPreview.title">
+            <label>Titel:</label>
+            <p>{{ structuredPreview.title }}</p>
+          </div>
+          <div class="preview-section" *ngIf="structuredPreview.summary">
+            <label>Zusammenfassung:</label>
+            <p>{{ structuredPreview.summary }}</p>
+          </div>
+          <div class="preview-section">
+            <label>Inhalt:</label>
+            <div class="preview-content">{{ structuredPreview.content }}</div>
+          </div>
+          <div class="preview-actions">
+            <button type="button" class="btn btn-primary btn-sm" (click)="acceptStructured()">Uebernehmen</button>
+            <button type="button" class="btn btn-secondary btn-sm" (click)="structuredPreview = null">Verwerfen</button>
+          </div>
         </div>
 
         <div *ngIf="editId" class="form-group">
@@ -126,10 +165,24 @@ export class ArtikelFormComponent implements OnInit {
   saving = false;
   generatingSummary = false;
 
+  // Dictation state
+  isDictating = false;
+  dictationText = '';
+  private recognition: any = null;
+
+  // LLM structuring state
+  structuring = false;
+  structuredPreview: { title: string; summary: string; content: string } | null = null;
+
   ngOnInit(): void {
     this.svc.listCategories().subscribe({ next: c => this.categories = c });
     this.svc.listGroupings().subscribe({ next: g => this.groupings = g });
     this.editId = this.route.snapshot.paramMap.get('id');
+    const parentParam = this.route.snapshot.queryParamMap.get('parent');
+    if (parentParam) {
+      this.parentArticleId = parentParam;
+    }
+
     if (this.editId) {
       this.svc.getById(this.editId, false).subscribe({
         next: a => {
@@ -183,6 +236,7 @@ export class ArtikelFormComponent implements OnInit {
       categoryId: this.categoryId || null,
       groupingId: this.groupingId || null,
       tagNames,
+      parentArticleId: this.parentArticleId || null,
     };
 
     if (this.editId) {
@@ -197,5 +251,94 @@ export class ArtikelFormComponent implements OnInit {
         error: () => this.saving = false,
       });
     }
+  }
+
+  // --- Dictation ---
+
+  toggleDictation(): void {
+    if (this.isDictating) {
+      this.stopDictation();
+    } else {
+      this.startDictation();
+    }
+  }
+
+  private startDictation(): void {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Spracherkennung wird von diesem Browser nicht unterstuetzt. Bitte verwenden Sie Chrome oder Edge.');
+      return;
+    }
+
+    this.recognition = new SpeechRecognition();
+    this.recognition.lang = 'de-DE';
+    this.recognition.continuous = true;
+    this.recognition.interimResults = true;
+
+    this.recognition.onresult = (event: any) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          this.content += (this.content ? ' ' : '') + event.results[i][0].transcript;
+          this.dictationText = '';
+        } else {
+          this.dictationText = transcript;
+        }
+      }
+    };
+
+    this.recognition.onerror = () => {
+      this.isDictating = false;
+    };
+
+    this.recognition.onend = () => {
+      if (this.isDictating) {
+        // Restart if still dictating (browser auto-stops)
+        this.recognition.start();
+      }
+    };
+
+    this.recognition.start();
+    this.isDictating = true;
+  }
+
+  private stopDictation(): void {
+    this.isDictating = false;
+    if (this.recognition) {
+      this.recognition.stop();
+      this.recognition = null;
+    }
+    this.dictationText = '';
+  }
+
+  // --- LLM Structuring ---
+
+  structureContent(): void {
+    if (!this.content.trim() || this.structuring) return;
+    this.structuring = true;
+
+    this.svc.structureText(this.content).subscribe({
+      next: result => {
+        this.structuredPreview = result;
+        this.structuring = false;
+      },
+      error: () => {
+        this.structuring = false;
+        alert('Strukturierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+      }
+    });
+  }
+
+  acceptStructured(): void {
+    if (!this.structuredPreview) return;
+    if (this.structuredPreview.title && !this.title) {
+      this.title = this.structuredPreview.title;
+    }
+    if (this.structuredPreview.summary) {
+      this.summary = this.structuredPreview.summary;
+    }
+    this.content = this.structuredPreview.content;
+    this.structuredPreview = null;
   }
 }

@@ -8,25 +8,16 @@ import { Article, Category, Grouping } from '../../models/artikel.model';
 @Component({
   selector: 'app-artikel-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ArticleTreeComponent],
   template: `
-    <div class="page-header">
-      <h1>Wissensdatenbank</h1>
-      <a routerLink="/artikel/neu" class="btn btn-primary">+ Neuer Artikel</a>
-    </div>
-
-    <div class="card filter-bar">
-      <div class="filter-row">
-        <div class="search-field">
-          <label>Suche</label>
-          <input type="text" [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Artikel durchsuchen...">
-        </div>
-        <div class="filter-field">
-          <label>Kategorie</label>
-          <select [(ngModel)]="selectedCategory" (change)="load()">
-            <option value="">Alle</option>
-            <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
-          </select>
+    <div class="wissensdatenbank-layout">
+      <!-- Tree Sidebar -->
+      <aside class="tree-sidebar" [class.collapsed]="treeSidebarCollapsed">
+        <div class="tree-toggle">
+          <button class="btn-icon" (click)="treeSidebarCollapsed = !treeSidebarCollapsed"
+                  [title]="treeSidebarCollapsed ? 'Baum einblenden' : 'Baum ausblenden'">
+            {{ treeSidebarCollapsed ? '&#9654;' : '&#9664;' }}
+          </button>
         </div>
         <div class="filter-field">
           <label>Gruppierung</label>
@@ -51,12 +42,13 @@ import { Article, Category, Grouping } from '../../models/artikel.model';
       {{ totalElements }} Artikel gefunden
     </div>
 
-    <div class="article-list">
-      <a *ngFor="let a of articles" [routerLink]="'/artikel/' + a.id" class="card article-card">
-        <div class="article-main">
-          <div class="article-content">
-            <h3>{{ a.title }}</h3>
-            <p>{{ a.summary || (a.content | slice:0:180) }}{{ !a.summary && a.content.length > 180 ? '...' : '' }}</p>
+      <!-- Main content -->
+      <div class="list-main">
+        <div class="page-header">
+          <h1>Wissensdatenbank</h1>
+          <div class="header-actions">
+            <a routerLink="/suche" class="btn btn-secondary">&#128269; Suche</a>
+            <a routerLink="/artikel/neu" class="btn btn-primary">+ Neuer Artikel</a>
           </div>
           <div class="article-badges">
             <span *ngIf="a.grouping" class="grouping-badge">{{ a.grouping.name }}</span>
@@ -64,30 +56,64 @@ import { Article, Category, Grouping } from '../../models/artikel.model';
             <span class="status-badge" [class]="a.status.toLowerCase()">{{ statusLabel(a.status) }}</span>
           </div>
         </div>
-        <div class="article-meta">
-          <span>v{{ a.version }}</span>
-          <span>{{ formatDate(a.createdAt) }}</span>
-          <span>{{ a.viewCount }} Aufrufe</span>
-          <span *ngIf="a.averageRating > 0">{{ a.averageRating.toFixed(1) }} / 5</span>
-          <span *ngFor="let t of a.tags" class="meta-tag">{{ t.name }}</span>
+
+        <div class="results-info" *ngIf="totalElements > 0">
+          {{ totalElements }} Artikel gefunden
         </div>
-      </a>
-    </div>
 
-    <div *ngIf="articles.length === 0 && !loading" class="empty-state">
-      <p>Keine Artikel gefunden.</p>
-      <a routerLink="/artikel/neu" class="btn btn-primary" style="margin-top:1rem">Ersten Artikel erstellen</a>
-    </div>
+        <div class="article-list">
+          <a *ngFor="let a of articles" [routerLink]="'/artikel/' + a.id" class="card article-card">
+            <div class="article-main">
+              <div class="article-content">
+                <h3>{{ a.title }}</h3>
+                <div class="article-hierarchy" *ngIf="a.breadcrumb && a.breadcrumb.length > 1">
+                  <span *ngFor="let bc of a.breadcrumb; let last = last; let first = first">
+                    <span *ngIf="!last && !first">{{ bc.title }} &rsaquo; </span>
+                  </span>
+                </div>
+                <p>{{ a.summary || (a.content | slice:0:180) }}{{ !a.summary && a.content.length > 180 ? '...' : '' }}</p>
+              </div>
+              <div class="article-badges">
+                <span *ngIf="a.category" class="tag">{{ a.category.name }}</span>
+                <span class="status-badge" [class]="a.status.toLowerCase()">{{ statusLabel(a.status) }}</span>
+                <span *ngIf="a.childCount > 0" class="children-badge">{{ a.childCount }} Unterartikel</span>
+              </div>
+            </div>
+            <div class="article-meta">
+              <span>v{{ a.version }}</span>
+              <span>{{ formatDate(a.createdAt) }}</span>
+              <span>{{ a.viewCount }} Aufrufe</span>
+              <span *ngIf="a.averageRating > 0">{{ a.averageRating.toFixed(1) }} / 5</span>
+              <span *ngIf="a.depth > 0" class="depth-info">Ebene {{ a.depth + 1 }}</span>
+              <span *ngFor="let t of a.tags" class="meta-tag">{{ t.name }}</span>
+            </div>
+          </a>
+        </div>
 
-    <div *ngIf="totalPages > 1" class="pagination">
-      <button class="btn btn-secondary btn-sm" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">Zurueck</button>
-      <span>Seite {{ currentPage + 1 }} von {{ totalPages }}</span>
-      <button class="btn btn-secondary btn-sm" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)">Weiter</button>
+        <div *ngIf="articles.length === 0 && !loading" class="empty-state">
+          <p>Keine Artikel gefunden.</p>
+          <a routerLink="/artikel/neu" class="btn btn-primary" style="margin-top:1rem">Ersten Artikel erstellen</a>
+        </div>
+
+        <div *ngIf="totalPages > 1" class="pagination">
+          <button class="btn btn-secondary btn-sm" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">Zurueck</button>
+          <span>Seite {{ currentPage + 1 }} von {{ totalPages }}</span>
+          <button class="btn btn-secondary btn-sm" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)">Weiter</button>
+        </div>
+      </div>
     </div>
   `,
   styles: [`
+    .wissensdatenbank-layout { display: flex; gap: 0; min-height: calc(100vh - 7rem); }
+    .tree-sidebar { width: 280px; background: #fff; border-right: 1px solid #e5e7eb; flex-shrink: 0; display: flex; flex-direction: column; transition: width 0.2s; }
+    .tree-sidebar.collapsed { width: 36px; }
+    .tree-toggle { display: flex; justify-content: flex-end; padding: 0.25rem; border-bottom: 1px solid #e5e7eb; }
+    .btn-icon { border: none; background: none; cursor: pointer; font-size: 0.75rem; color: #6b7280; padding: 0.25rem 0.375rem; }
+    .btn-icon:hover { color: #006EC7; }
+    .list-main { flex: 1; min-width: 0; padding: 0 0 0 1rem; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
     .page-header h1 { font-size: 1.25rem; font-weight: 600; }
+    .header-actions { display: flex; gap: 0.5rem; }
     .filter-bar { margin-bottom: 1.5rem; }
     .filter-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end; }
     .search-field { flex: 1; min-width: 200px; }
@@ -96,7 +122,8 @@ import { Article, Category, Grouping } from '../../models/artikel.model';
     .article-list { display: flex; flex-direction: column; gap: 0.75rem; }
     .article-card { text-decoration: none; color: inherit; transition: box-shadow 0.15s; cursor: pointer; }
     .article-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-    .article-card h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .article-card h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.125rem; }
+    .article-hierarchy { font-size: 0.6875rem; color: #9ca3af; margin-bottom: 0.25rem; }
     .article-card p { font-size: 0.8125rem; color: #6b7280; line-height: 1.5; }
     .article-main { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
     .article-content { flex: 1; }
@@ -109,9 +136,12 @@ import { Article, Category, Grouping } from '../../models/artikel.model';
     .status-badge.published { background: #dcfce7; color: #166534; }
     .status-badge.draft { background: #fef3c7; color: #92400e; }
     .status-badge.archived { background: #f3f4f6; color: #6b7280; }
+    .children-badge { padding: 0.15rem 0.5rem; background: #f0f9ff; color: #0369a1; font-size: 0.6875rem; border-radius: 0.25rem; }
+    .depth-info { padding: 0.1rem 0.4rem; background: #f0f9ff; color: #0369a1; font-size: 0.625rem; border-radius: 0.25rem; }
     .empty-state { text-align: center; padding: 3rem; color: #9ca3af; }
     .pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.5rem; font-size: 0.875rem; }
     .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+    @media (max-width: 768px) { .tree-sidebar { display: none; } .list-main { padding: 0; } }
   `]
 })
 export class ArtikelListComponent implements OnInit {
@@ -128,6 +158,7 @@ export class ArtikelListComponent implements OnInit {
   totalElements = 0;
   totalPages = 0;
   currentPage = 0;
+  treeSidebarCollapsed = false;
 
   ngOnInit(): void {
     this.load();

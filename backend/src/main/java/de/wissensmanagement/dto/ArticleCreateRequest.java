@@ -19,4 +19,5 @@ public class ArticleCreateRequest {
     private List<String> tagNames;
     private boolean publicWithinTenant = true;
     private String linkedTaskId;
+    private String parentArticleId;
 }
