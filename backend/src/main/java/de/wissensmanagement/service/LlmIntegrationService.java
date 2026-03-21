@@ -36,7 +36,7 @@ public class LlmIntegrationService {
     public LlmConfig getActiveLlmConfig(String tenantId, String jwtToken) {
         try {
             List<Map<String, Object>> configs = restClient.get()
-                    .uri(portalCoreBaseUrl + "/tenants/" + tenantId + "/profile/llm")
+                    .uri(portalCoreBaseUrl + "/api/tenants/" + tenantId + "/profile/llm")
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtToken)
                     .retrieve()
                     .body(List.class);
