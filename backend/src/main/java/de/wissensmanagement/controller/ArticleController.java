@@ -3,11 +3,7 @@ package de.wissensmanagement.controller;
 import de.wissensmanagement.config.SecurityHelper;
 import de.wissensmanagement.dto.*;
 import de.wissensmanagement.enums.ArticleStatus;
-import de.wissensmanagement.service.ArticleService;
-import de.wissensmanagement.service.FeedbackService;
-import de.wissensmanagement.service.PermissionService;
-import de.wissensmanagement.service.TaskIntegrationService;
-import de.wissensmanagement.service.UsageTrackingService;
+import de.wissensmanagement.service.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -29,19 +25,25 @@ public class ArticleController {
     private final UsageTrackingService usageService;
     private final SecurityHelper securityHelper;
     private final PermissionService permissionService;
+    private final HierarchyService hierarchyService;
+    private final SearchService searchService;
 
     public ArticleController(ArticleService articleService,
                               FeedbackService feedbackService,
                               TaskIntegrationService taskService,
                               UsageTrackingService usageService,
                               SecurityHelper securityHelper,
-                              PermissionService permissionService) {
+                              PermissionService permissionService,
+                              HierarchyService hierarchyService,
+                              SearchService searchService) {
         this.articleService = articleService;
         this.feedbackService = feedbackService;
         this.taskService = taskService;
         this.usageService = usageService;
         this.securityHelper = securityHelper;
         this.permissionService = permissionService;
+        this.hierarchyService = hierarchyService;
+        this.searchService = searchService;
     }
 
     @GetMapping
@@ -186,6 +188,63 @@ public class ArticleController {
         }
         return ResponseEntity.internalServerError().body(Map.of("error", "Aufgabe konnte nicht erstellt werden"));
     }
+
+    // --- Hierarchy endpoints ---
+
+    @GetMapping("/baum")
+    public List<HierarchyService.ArticleTreeNode> getTree() {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        return hierarchyService.getArticleTree(tenantId);
+    }
+
+    @GetMapping("/{id}/kinder")
+    public List<ArticleDto> getChildren(@PathVariable String id) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        return hierarchyService.getChildren(tenantId, id).stream()
+                .map(articleService::toDtoLight)
+                .toList();
+    }
+
+    @GetMapping("/{id}/breadcrumb")
+    public List<ArticleDto.BreadcrumbItem> getBreadcrumb(@PathVariable String id) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        return hierarchyService.getBreadcrumb(tenantId, id);
+    }
+
+    @PutMapping("/{id}/verschieben")
+    public ResponseEntity<Void> moveArticle(@PathVariable String id,
+                                             @RequestBody Map<String, String> body) {
+        permissionService.requireSchreiben(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        String newParentId = body.get("newParentId"); // null = move to root
+        hierarchyService.moveArticle(tenantId, id, newParentId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/sortierung")
+    public ResponseEntity<Void> reorderArticles(@RequestBody ReorderRequest request) {
+        permissionService.requireSchreiben(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        hierarchyService.reorderArticles(tenantId, request.parentArticleId(), request.orderedIds());
+        return ResponseEntity.ok().build();
+    }
+
+    // --- Search endpoint ---
+
+    @GetMapping("/suche")
+    public List<SearchService.SearchResult> search(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "HYBRID") String mode,
+            @RequestParam(defaultValue = "20") int limit) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        return searchService.search(tenantId, q, SearchService.SearchMode.valueOf(mode), limit);
+    }
+
+    record ReorderRequest(String parentArticleId, List<String> orderedIds) {}
 
     private String extractToken(HttpServletRequest request) {
         String header = request.getHeader("Authorization");

@@ -60,4 +60,25 @@ public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArtic
            "plainto_tsquery('german', :query)) DESC " +
            "LIMIT :limit", nativeQuery = true)
     List<KnowledgeArticle> fullTextSearch(String tenantId, String query, int limit);
+
+    // --- Hierarchy queries ---
+
+    List<KnowledgeArticle> findByTenantIdAndParentArticleIdIsNullOrderBySortOrderAsc(String tenantId);
+
+    List<KnowledgeArticle> findByTenantIdAndParentArticleIdOrderBySortOrderAsc(String tenantId, String parentArticleId);
+
+    @Query("SELECT COUNT(a) FROM KnowledgeArticle a WHERE a.tenantId = :tenantId AND a.parentArticleId = :parentId")
+    int countChildren(String tenantId, String parentId);
+
+    @Query("SELECT a FROM KnowledgeArticle a WHERE a.tenantId = :tenantId AND a.treePath LIKE CONCAT(:parentPath, '%') ORDER BY a.depth, a.sortOrder")
+    List<KnowledgeArticle> findSubtree(String tenantId, String parentPath);
+
+    @Query("SELECT MAX(a.sortOrder) FROM KnowledgeArticle a WHERE a.tenantId = :tenantId AND a.parentArticleId = :parentId")
+    Integer findMaxSortOrder(String tenantId, String parentId);
+
+    @Query("SELECT MAX(a.sortOrder) FROM KnowledgeArticle a WHERE a.tenantId = :tenantId AND a.parentArticleId IS NULL")
+    Integer findMaxRootSortOrder(String tenantId);
+
+    @Query("SELECT a FROM KnowledgeArticle a WHERE a.tenantId = :tenantId AND a.parentArticleId = :parentId AND a.sortOrder > :sortOrder ORDER BY a.sortOrder ASC")
+    List<KnowledgeArticle> findSiblingsAfter(String tenantId, String parentId, int sortOrder);
 }
