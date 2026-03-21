@@ -27,7 +27,7 @@ portal:
   jwt:
     secret: ${JWT_SECRET:ThisIsADevelopmentSecretKeyThatMustBeAtLeast32BytesLong!}
   core:
-    base-url: ${PORTAL_CORE_URL:http://portal-backend:8080/api}
+    base-url: ${PORTAL_CORE_BASE_URL:http://portal-backend:8080}
 
 logging:
   level:
