@@ -1,6 +1,6 @@
 {
   "name": "wissensmanagement-frontend",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "scripts": {
     "start": "ng serve",
     "build": "ng build --configuration production"

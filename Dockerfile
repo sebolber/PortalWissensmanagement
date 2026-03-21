@@ -18,7 +18,7 @@ RUN mvn package -DskipTests -B
 
 # Stage 3: Runtime
 FROM eclipse-temurin:21-jre-alpine
-LABEL app.version="3.0.0"
+LABEL app.version="3.7.0"
 WORKDIR /app
 COPY --from=backend-build /app/target/*.jar app.jar
 EXPOSE 8080
