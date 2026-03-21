@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -105,10 +105,18 @@ import { RouterModule } from '@angular/router';
   `]
 })
 export class AppComponent implements OnInit {
+  private readonly router = inject(Router);
   sidebarCollapsed = false;
   embedded = false;
 
   ngOnInit(): void {
     this.embedded = window.self !== window.top;
+
+    // Im Portal-Iframe: Seite aus Query-Parameter navigieren
+    const urlParams = new URLSearchParams(window.location.search);
+    const page = urlParams.get('page');
+    if (page) {
+      this.router.navigateByUrl(page);
+    }
   }
 }
