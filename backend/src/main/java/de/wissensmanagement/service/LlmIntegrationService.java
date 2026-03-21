@@ -63,9 +63,13 @@ public class LlmIntegrationService {
             int tokenCount = response.get("tokenCount") != null
                     ? ((Number) response.get("tokenCount")).intValue() : 0;
 
+            if (content == null || content.isBlank()) {
+                return new LlmResponse("Keine Antwort vom LLM erhalten. Bitte pruefen Sie die LLM-Konfiguration.", model, configId, tokenCount);
+            }
+
             return new LlmResponse(content, model, configId, tokenCount);
         } catch (Exception e) {
-            log.error("LLM chat proxy call failed: {}", e.getMessage());
+            log.error("LLM chat proxy call failed: {}", e.getMessage(), e);
             return new LlmResponse(
                     "Kein LLM konfiguriert. Bitte konfigurieren Sie eine KI-Verbindung in den Mandanteneinstellungen.",
                     null, null, 0);

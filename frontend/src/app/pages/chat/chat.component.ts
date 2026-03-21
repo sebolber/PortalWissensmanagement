@@ -250,7 +250,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
       },
       error: err => {
         this.loading = false;
-        this.errorMsg = err.error?.message || 'Fehler bei der Verarbeitung. Bitte versuchen Sie es erneut.';
+        this.errorMsg = err.error?.error || err.error?.message || 'Fehler bei der Verarbeitung. Bitte versuchen Sie es erneut.';
       }
     });
   }
