@@ -36,12 +36,7 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
             <option value="ARCHIVED">Archiviert</option>
           </select>
         </div>
-      </div>
-    </div>
-
-    <div class="results-info" *ngIf="totalElements > 0">
-      {{ totalElements }} Artikel gefunden
-    </div>
+      </aside>
 
       <!-- Main content -->
       <div class="list-main">
@@ -50,11 +45,6 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
           <div class="header-actions">
             <a routerLink="/suche" class="btn btn-secondary">&#128269; Suche</a>
             <a routerLink="/artikel/neu" class="btn btn-primary">+ Neuer Artikel</a>
-          </div>
-          <div class="article-badges">
-            <span *ngIf="a.grouping" class="grouping-badge">{{ a.grouping.name }}</span>
-            <span *ngIf="a.category" class="tag">{{ a.category.name }}</span>
-            <span class="status-badge" [class]="a.status.toLowerCase()">{{ statusLabel(a.status) }}</span>
           </div>
         </div>
 
@@ -75,6 +65,7 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
                 <p>{{ a.summary || (a.content | slice:0:180) }}{{ !a.summary && a.content.length > 180 ? '...' : '' }}</p>
               </div>
               <div class="article-badges">
+                <span *ngIf="a.grouping" class="grouping-badge">{{ a.grouping.name }}</span>
                 <span *ngIf="a.category" class="tag">{{ a.category.name }}</span>
                 <span class="status-badge" [class]="a.status.toLowerCase()">{{ statusLabel(a.status) }}</span>
                 <span *ngIf="a.childCount > 0" class="children-badge">{{ a.childCount }} Unterartikel</span>
