@@ -29,6 +29,12 @@ public class KnowledgeChunk {
     @Column(name = "token_count")
     private Integer tokenCount;
 
+    @Column(length = 500)
+    private String heading;
+
+    @Column(name = "article_title", length = 500)
+    private String articleTitle;
+
     @Column(columnDefinition = "TEXT")
     private String metadata;
 

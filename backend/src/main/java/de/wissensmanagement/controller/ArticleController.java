@@ -223,6 +223,16 @@ public class ArticleController {
         return ResponseEntity.ok(Map.of("summary", response.content()));
     }
 
+    @GetMapping("/suche")
+    public List<SearchService.SearchResult> search(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "HYBRID") SearchService.SearchMode mode,
+            @RequestParam(defaultValue = "20") int limit) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        return searchService.search(tenantId, q, mode, limit);
+    }
+
     private String extractToken(HttpServletRequest request) {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {

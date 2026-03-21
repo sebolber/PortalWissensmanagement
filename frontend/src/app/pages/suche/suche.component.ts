@@ -24,11 +24,19 @@ import { SearchResult } from '../../models/artikel.model';
             {{ searching ? 'Suche...' : 'Suchen' }}
           </button>
         </div>
+        <div class="search-options">
+          <label class="mode-option" *ngFor="let m of searchModes">
+            <input type="radio" name="searchMode" [value]="m.value" [(ngModel)]="searchMode">
+            <span class="mode-label">{{ m.label }}</span>
+            <span class="mode-desc">{{ m.description }}</span>
+          </label>
+        </div>
       </div>
 
       <div class="results-info" *ngIf="searched && !searching">
         {{ results.length }} Ergebnis{{ results.length !== 1 ? 'se' : '' }} gefunden
         <span *ngIf="query">&ndash; &laquo;{{ query }}&raquo;</span>
+        <span class="mode-tag">{{ searchModeLabel() }}</span>
       </div>
 
       <div class="results-list">
@@ -47,7 +55,7 @@ import { SearchResult } from '../../models/artikel.model';
               <span class="relevance-badge" [class]="getRelevanceClass(r.relevanceScore)">
                 {{ (r.relevanceScore * 100).toFixed(0) }}%
               </span>
-              <span class="type-badge">{{ r.searchType }}</span>
+              <span class="type-badge" [class]="r.searchType.toLowerCase()">{{ searchTypeLabel(r.searchType) }}</span>
             </div>
           </div>
           <p class="result-snippet">{{ r.snippet }}</p>
@@ -61,7 +69,12 @@ import { SearchResult } from '../../models/artikel.model';
       <div *ngIf="searched && results.length === 0 && !searching" class="empty-state card">
         <h3>Keine Ergebnisse</h3>
         <p>Versuchen Sie andere Suchbegriffe oder eine allgemeinere Formulierung.</p>
-        <p class="tip">Tipp: Sie koennen auch den <a routerLink="/chat">Wissenschat</a> nutzen, um Fragen zu stellen.</p>
+        <div class="empty-suggestions">
+          <p *ngIf="searchMode !== 'HYBRID'">
+            Tipp: Wechseln Sie in den Modus <strong>Hybrid</strong> fuer breitere Ergebnisse.
+          </p>
+          <p>Sie koennen auch den <a routerLink="/chat">Wissenschat</a> nutzen, um Fragen in natuerlicher Sprache zu stellen.</p>
+        </div>
       </div>
     </div>
   `,
@@ -73,7 +86,13 @@ import { SearchResult } from '../../models/artikel.model';
     .search-box { margin-bottom: 1.5rem; }
     .search-input-row { display: flex; gap: 0.75rem; }
     .search-input { flex: 1; font-size: 1rem; padding: 0.625rem 0.75rem; }
-    .results-info { font-size: 0.8125rem; color: #6b7280; margin-bottom: 0.75rem; }
+    .search-options { display: flex; gap: 1rem; margin-top: 0.75rem; flex-wrap: wrap; }
+    .mode-option { display: flex; align-items: baseline; gap: 0.375rem; cursor: pointer; font-size: 0.8125rem; }
+    .mode-option input[type="radio"] { margin: 0; }
+    .mode-label { font-weight: 500; }
+    .mode-desc { color: #9ca3af; font-size: 0.75rem; }
+    .results-info { font-size: 0.8125rem; color: #6b7280; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .mode-tag { font-size: 0.625rem; padding: 0.1rem 0.375rem; background: #eff6ff; color: #006EC7; border-radius: 0.25rem; text-transform: uppercase; }
     .results-list { display: flex; flex-direction: column; gap: 0.75rem; }
     .result-card { text-decoration: none; color: inherit; transition: box-shadow 0.15s; cursor: pointer; }
     .result-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
@@ -88,7 +107,10 @@ import { SearchResult } from '../../models/artikel.model';
     .relevance-badge.high { background: #dcfce7; color: #166534; }
     .relevance-badge.medium { background: #fef3c7; color: #92400e; }
     .relevance-badge.low { background: #f3f4f6; color: #6b7280; }
-    .type-badge { font-size: 0.5625rem; padding: 0.1rem 0.375rem; background: #f3f4f6; color: #6b7280; border-radius: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .type-badge { font-size: 0.5625rem; padding: 0.1rem 0.375rem; border-radius: 0.25rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .type-badge.fulltext { background: #dbeafe; color: #1e40af; }
+    .type-badge.semantic { background: #ede9fe; color: #6d28d9; }
+    .type-badge.hybrid { background: #dcfce7; color: #166534; }
     .result-snippet { font-size: 0.8125rem; color: #6b7280; line-height: 1.6; margin-bottom: 0.5rem; }
     .result-footer { display: flex; gap: 0.5rem; align-items: center; }
     .status-badge { padding: 0.1rem 0.4rem; border-radius: 0.25rem; font-size: 0.625rem; font-weight: 600; text-transform: uppercase; }
@@ -99,23 +121,30 @@ import { SearchResult } from '../../models/artikel.model';
     .empty-state { text-align: center; padding: 3rem; }
     .empty-state h3 { font-size: 1rem; font-weight: 600; color: #6b7280; margin-bottom: 0.5rem; }
     .empty-state p { font-size: 0.875rem; color: #9ca3af; line-height: 1.6; }
-    .tip { margin-top: 0.5rem; }
-    .tip a { color: #006EC7; text-decoration: none; }
-    .tip a:hover { text-decoration: underline; }
+    .empty-suggestions { margin-top: 1rem; }
+    .empty-suggestions a { color: #006EC7; text-decoration: none; }
+    .empty-suggestions a:hover { text-decoration: underline; }
   `]
 })
 export class SucheComponent {
   private svc = inject(ArtikelService);
 
   query = '';
+  searchMode = 'HYBRID';
   results: SearchResult[] = [];
   searching = false;
   searched = false;
 
+  searchModes = [
+    { value: 'HYBRID', label: 'Hybrid', description: '(empfohlen)' },
+    { value: 'FULLTEXT', label: 'Volltext', description: '(exakte Begriffe)' },
+    { value: 'SEMANTIC', label: 'Semantisch', description: '(aehnliche Inhalte)' },
+  ];
+
   doSearch(): void {
     if (!this.query.trim()) return;
     this.searching = true;
-    this.svc.search(this.query).subscribe({
+    this.svc.search(this.query, this.searchMode).subscribe({
       next: results => {
         this.results = results;
         this.searching = false;
@@ -132,6 +161,19 @@ export class SucheComponent {
     if (score >= 0.7) return 'high';
     if (score >= 0.4) return 'medium';
     return 'low';
+  }
+
+  searchModeLabel(): string {
+    return this.searchModes.find(m => m.value === this.searchMode)?.label || this.searchMode;
+  }
+
+  searchTypeLabel(type: string): string {
+    switch (type) {
+      case 'FULLTEXT': return 'Volltext';
+      case 'SEMANTIC': return 'Semantisch';
+      case 'HYBRID': return 'Hybrid';
+      default: return type;
+    }
   }
 
   statusLabel(s: string): string {

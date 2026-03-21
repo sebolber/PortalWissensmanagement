@@ -98,7 +98,8 @@ public class ChatController {
                 response.content(),
                 response.sources(),
                 response.model(),
-                response.tokenCount()
+                response.tokenCount(),
+                response.retrievalTrace()
         );
     }
 
@@ -145,7 +146,8 @@ public class ChatController {
     record SendRequest(String sessionId, String message, String modelConfigId) {}
 
     record ChatResponseDto(String sessionId, String sessionTitle, String content,
-                           List<ChatService.SourceRef> sources, String model, int tokenCount) {}
+                           List<ChatService.SourceRef> sources, String model, int tokenCount,
+                           List<ChatService.TraceInfo> retrievalTrace) {}
 
     record SessionDto(String id, String title, String modelConfigId, String createdAt, String updatedAt) {}
 
