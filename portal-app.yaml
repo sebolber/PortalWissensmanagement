@@ -4,7 +4,7 @@ name: Wissensmanagement
 version: 3.1.0
 description: Wissensdatenbank mit RAG-Chat, LLM-Integration, Artikelverwaltung und Volltextsuche
 
-branch: claude/fix-portal-menu-display-2oBdo
+branch: main
 
 dockerfile: Dockerfile
 
