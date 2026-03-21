@@ -148,6 +148,16 @@ export interface LlmModelConfig {
   active: boolean;
 }
 
+export interface PromptConfig {
+  id: string;
+  name: string;
+  description: string | null;
+  promptText: string;
+  promptType: 'SUMMARY' | 'CONTENT';
+  createdAt: string;
+  updatedAt: string | null;
+}
+
 export interface ChatRequest {
   sessionId?: string;
   question: string;

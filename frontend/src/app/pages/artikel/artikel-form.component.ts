@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ArtikelService } from '../../services/artikel.service';
-import { ArticleTreeNode, Category, Grouping } from '../../models/artikel.model';
+import { ArticleTreeNode, Category, Grouping, PromptConfig } from '../../models/artikel.model';
 
 @Component({
   selector: 'app-artikel-form',
@@ -25,10 +25,23 @@ import { ArticleTreeNode, Category, Grouping } from '../../models/artikel.model'
         <div class="form-group">
           <label>
             Zusammenfassung
-            <button type="button" class="btn-generate" (click)="generateSummary()"
-                    [disabled]="generatingSummary || !content.trim()" title="Zusammenfassung per KI generieren">
-              {{ generatingSummary ? 'Generiert...' : 'KI-Zusammenfassung' }}
-            </button>
+            <span class="ai-actions">
+              <select [(ngModel)]="selectedSummaryPromptId" name="summaryPrompt" class="prompt-select"
+                      *ngIf="summaryPrompts.length > 0">
+                <option value="">Prompt waehlen...</option>
+                <option *ngFor="let p of summaryPrompts" [value]="p.id">{{ p.name }}</option>
+              </select>
+              <button type="button" class="btn-generate" (click)="generateSummaryWithPrompt()"
+                      [disabled]="generatingSummary || !content.trim() || !selectedSummaryPromptId"
+                      *ngIf="summaryPrompts.length > 0"
+                      title="Zusammenfassung mit ausgewaehltem Prompt generieren">
+                {{ generatingSummary ? 'Generiert...' : 'Generieren' }}
+              </button>
+              <button type="button" class="btn-generate" (click)="generateSummary()"
+                      [disabled]="generatingSummary || !content.trim()" title="Standard-KI-Zusammenfassung">
+                {{ generatingSummary ? 'Generiert...' : 'KI-Zusammenfassung' }}
+              </button>
+            </span>
           </label>
           <textarea [(ngModel)]="summary" name="summary" rows="4" placeholder="Zusammenfassung (optional)"
                     style="resize: vertical;"></textarea>
@@ -66,7 +79,20 @@ import { ArticleTreeNode, Category, Grouping } from '../../models/artikel.model'
         </div>
 
         <div class="form-group">
-          <label>Inhalt *</label>
+          <label>
+            Inhalt *
+            <span class="ai-actions" *ngIf="contentPrompts.length > 0">
+              <select [(ngModel)]="selectedContentPromptId" name="contentPrompt" class="prompt-select">
+                <option value="">Prompt waehlen...</option>
+                <option *ngFor="let p of contentPrompts" [value]="p.id">{{ p.name }}</option>
+              </select>
+              <button type="button" class="btn-generate" (click)="applyContentPrompt()"
+                      [disabled]="applyingContent || !content.trim() || !selectedContentPromptId"
+                      title="Inhalt mit ausgewaehltem Prompt ueberarbeiten">
+                {{ applyingContent ? 'Verarbeitet...' : 'Anwenden' }}
+              </button>
+            </span>
+          </label>
           <div class="toolbar">
             <button type="button" (click)="execCmd('bold')" title="Fett"><b>F</b></button>
             <button type="button" (click)="execCmd('italic')" title="Kursiv"><i>K</i></button>
@@ -109,6 +135,19 @@ import { ArticleTreeNode, Category, Grouping } from '../../models/artikel.model'
           </div>
         </div>
 
+        <!-- Prompt-basierte Inhaltsvorschau -->
+        <div *ngIf="contentPreview" class="card structure-preview">
+          <h3>KI-Ueberarbeitung</h3>
+          <div class="preview-section">
+            <label>Ueberarbeiteter Inhalt:</label>
+            <div class="preview-content" [innerHTML]="contentPreview"></div>
+          </div>
+          <div class="preview-actions">
+            <button type="button" class="btn btn-primary btn-sm" (click)="acceptContentPreview()">Uebernehmen</button>
+            <button type="button" class="btn btn-secondary btn-sm" (click)="contentPreview = null">Verwerfen</button>
+          </div>
+        </div>
+
         <div *ngIf="editId" class="form-group">
           <label>Aenderungsnotiz</label>
           <input type="text" [(ngModel)]="changeNote" name="changeNote" placeholder="Was wurde geaendert?">
@@ -136,6 +175,8 @@ import { ArticleTreeNode, Category, Grouping } from '../../models/artikel.model'
     .btn-generate { font-size: 0.6875rem; padding: 0.2rem 0.5rem; background: #eff6ff; color: #006EC7; border: 1px solid #bfdbfe; border-radius: 0.375rem; cursor: pointer; white-space: nowrap; }
     .btn-generate:hover:not(:disabled) { background: #dbeafe; }
     .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+    .ai-actions { display: inline-flex; align-items: center; gap: 0.375rem; margin-left: auto; }
+    .prompt-select { font-size: 0.6875rem; padding: 0.2rem 0.4rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; background: #fff; color: #374151; max-width: 180px; }
     .toolbar { display: flex; gap: 0.25rem; padding: 0.375rem; background: #f9fafb; border: 1px solid #e5e7eb; border-bottom: none; border-radius: 0.5rem 0.5rem 0 0; }
     .toolbar button { width: 2rem; height: 2rem; border: 1px solid #e5e7eb; background: #fff; border-radius: 0.25rem; cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; justify-content: center; }
     .toolbar button:hover { background: #eff6ff; border-color: #006EC7; }
@@ -176,10 +217,20 @@ export class ArtikelFormComponent implements OnInit {
   structuring = false;
   structuredPreview: { title: string; summary: string; content: string } | null = null;
 
+  // Prompt config state
+  summaryPrompts: PromptConfig[] = [];
+  contentPrompts: PromptConfig[] = [];
+  selectedSummaryPromptId = '';
+  selectedContentPromptId = '';
+  applyingContent = false;
+  contentPreview: string | null = null;
+
   ngOnInit(): void {
     this.svc.listCategories().subscribe({ next: c => this.categories = c });
     this.svc.listGroupings().subscribe({ next: g => this.groupings = g });
     this.svc.getTree().subscribe({ next: tree => this.flatTree = this.flattenTree(tree, 0) });
+    this.svc.listPrompts('SUMMARY').subscribe({ next: p => this.summaryPrompts = p });
+    this.svc.listPrompts('CONTENT').subscribe({ next: p => this.contentPrompts = p });
     this.editId = this.route.snapshot.paramMap.get('id');
     const parentParam = this.route.snapshot.queryParamMap.get('parent');
     if (parentParam) {
@@ -346,6 +397,45 @@ export class ArtikelFormComponent implements OnInit {
       }
     }
     return result;
+  }
+
+  generateSummaryWithPrompt(): void {
+    if (!this.content.trim() || !this.selectedSummaryPromptId) return;
+    this.generatingSummary = true;
+    const plainText = this.contentEditorRef?.nativeElement?.innerText || this.content;
+    this.svc.applyPrompt(this.selectedSummaryPromptId, plainText, this.title).subscribe({
+      next: res => {
+        this.summary = res.result;
+        this.generatingSummary = false;
+      },
+      error: () => this.generatingSummary = false
+    });
+  }
+
+  applyContentPrompt(): void {
+    if (!this.content.trim() || !this.selectedContentPromptId || this.applyingContent) return;
+    this.applyingContent = true;
+    const plainText = this.contentEditorRef?.nativeElement?.innerText || this.content;
+    this.svc.applyPrompt(this.selectedContentPromptId, plainText, this.title).subscribe({
+      next: res => {
+        this.contentPreview = res.result;
+        this.applyingContent = false;
+      },
+      error: () => {
+        this.applyingContent = false;
+        alert('Verarbeitung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+      }
+    });
+  }
+
+  acceptContentPreview(): void {
+    if (!this.contentPreview) return;
+    this.content = this.contentPreview;
+    this.contentHtml = this.contentPreview;
+    if (this.contentEditorRef) {
+      this.contentEditorRef.nativeElement.innerHTML = this.contentPreview;
+    }
+    this.contentPreview = null;
   }
 
   acceptStructured(): void {

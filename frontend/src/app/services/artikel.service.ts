@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Article, ArticlePage, ArticleVersion, ArticleTreeNode, BreadcrumbItem, Category, Grouping, SearchResult, StructuredResult, Tag, Statistik } from '../models/artikel.model';
+import { Article, ArticlePage, ArticleVersion, ArticleTreeNode, BreadcrumbItem, Category, Grouping, PromptConfig, SearchResult, StructuredResult, Tag, Statistik } from '../models/artikel.model';
 
 @Injectable({ providedIn: 'root' })
 export class ArtikelService {
@@ -147,5 +147,35 @@ export class ArtikelService {
 
   structureText(content: string): Observable<StructuredResult> {
     return this.http.post<StructuredResult>(`${this.base}/structure`, { content });
+  }
+
+  // --- Prompt Configs ---
+
+  private readonly promptBase = 'api/prompts';
+
+  listPrompts(type?: 'SUMMARY' | 'CONTENT'): Observable<PromptConfig[]> {
+    let p = new HttpParams();
+    if (type) p = p.set('type', type);
+    return this.http.get<PromptConfig[]>(this.promptBase, { params: p });
+  }
+
+  getPrompt(id: string): Observable<PromptConfig> {
+    return this.http.get<PromptConfig>(`${this.promptBase}/${id}`);
+  }
+
+  createPrompt(data: { name: string; description?: string; promptText: string; promptType: 'SUMMARY' | 'CONTENT' }): Observable<PromptConfig> {
+    return this.http.post<PromptConfig>(this.promptBase, data);
+  }
+
+  updatePrompt(id: string, data: { name: string; description?: string; promptText: string; promptType: 'SUMMARY' | 'CONTENT' }): Observable<PromptConfig> {
+    return this.http.put<PromptConfig>(`${this.promptBase}/${id}`, data);
+  }
+
+  deletePrompt(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.promptBase}/${id}`);
+  }
+
+  applyPrompt(promptId: string, content: string, title?: string): Observable<{ result: string }> {
+    return this.http.post<{ result: string }>(`${this.promptBase}/${promptId}/anwenden`, { content, title });
   }
 }

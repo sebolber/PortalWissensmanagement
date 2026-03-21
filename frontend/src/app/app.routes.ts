@@ -9,5 +9,6 @@ export const routes: Routes = [
   { path: 'suche', loadComponent: () => import('./pages/suche/suche.component').then(m => m.SucheComponent) },
   { path: 'chat', loadComponent: () => import('./pages/chat/chat.component').then(m => m.ChatComponent) },
   { path: 'kategorien', loadComponent: () => import('./pages/kategorien/kategorien.component').then(m => m.KategorienComponent) },
+  { path: 'konfiguration', loadComponent: () => import('./pages/konfiguration/konfiguration.component').then(m => m.KonfigurationComponent) },
   { path: '**', redirectTo: '' },
 ];
