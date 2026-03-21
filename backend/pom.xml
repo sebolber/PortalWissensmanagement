@@ -13,7 +13,7 @@
 
     <groupId>de.wissensmanagement</groupId>
     <artifactId>wissensmanagement</artifactId>
-    <version>3.2.0</version>
+    <version>3.3.0</version>
     <name>Wissensmanagement</name>
     <description>Wissensdatenbank mit RAG-Chat, LLM-Integration und Mandantenfaehigkeit</description>
 
