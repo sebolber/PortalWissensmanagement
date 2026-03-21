@@ -5,7 +5,6 @@ import de.wissensmanagement.entity.ChatMessage;
 import de.wissensmanagement.entity.ChatSession;
 import de.wissensmanagement.service.ChatService;
 import de.wissensmanagement.service.PermissionService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -76,11 +75,11 @@ public class ChatController {
     }
 
     @PostMapping("/send")
-    public ChatResponseDto sendMessage(@RequestBody SendRequest request, HttpServletRequest httpRequest) {
-        permissionService.requireChat(securityHelper.getCurrentToken());
+    public ChatResponseDto sendMessage(@RequestBody SendRequest request) {
+        String jwtToken = securityHelper.getCurrentToken();
+        permissionService.requireChat(jwtToken);
         String tenantId = securityHelper.getCurrentTenantId();
         String userId = securityHelper.getCurrentUserId();
-        String jwtToken = extractToken(httpRequest);
 
         ChatService.ChatResponse response = chatService.sendMessage(
                 request.sessionId(), tenantId, userId, request.message(), jwtToken);
@@ -93,14 +92,6 @@ public class ChatController {
                 response.model(),
                 response.tokenCount()
         );
-    }
-
-    private String extractToken(HttpServletRequest request) {
-        String header = request.getHeader("Authorization");
-        if (header != null && header.startsWith("Bearer ")) {
-            return header.substring(7);
-        }
-        return null;
     }
 
     private SessionDto toSessionDto(ChatSession s) {

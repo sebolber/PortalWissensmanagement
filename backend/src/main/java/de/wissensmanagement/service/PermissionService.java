@@ -132,7 +132,7 @@ public class PermissionService {
 
         try {
             Map<String, Object> response = restClient.get()
-                    .uri(portalCoreBaseUrl + "/apps/" + APP_ID + "/berechtigungen")
+                    .uri(portalCoreBaseUrl + "/api/apps/" + APP_ID + "/berechtigungen")
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtToken)
                     .retrieve()
                     .body(Map.class);

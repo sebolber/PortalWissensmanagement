@@ -50,7 +50,7 @@ public class TaskIntegrationService {
             }
 
             Map<String, Object> response = restClient.post()
-                    .uri(portalCoreBaseUrl + "/nachrichten")
+                    .uri(portalCoreBaseUrl + "/api/nachrichten")
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtToken)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(body)

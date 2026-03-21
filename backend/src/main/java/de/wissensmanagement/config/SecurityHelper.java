@@ -1,5 +1,6 @@
 package de.wissensmanagement.config;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -49,6 +50,15 @@ public class SecurityHelper {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             return header.substring(7);
+        }
+        // Fallback: Token aus Cookie lesen (iframe-Zugriff via Portal)
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("portal_token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
         }
         throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Kein Authentifizierungstoken vorhanden");
     }

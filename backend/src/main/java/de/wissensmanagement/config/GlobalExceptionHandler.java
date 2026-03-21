@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
 
@@ -20,6 +21,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleNotFound(EntityNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, String>> handleNoResource(NoResourceFoundException e) {
+        log.debug("Statische Ressource nicht gefunden: {}", e.getResourcePath());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "Ressource nicht gefunden"));
     }
 
     @ExceptionHandler(ResponseStatusException.class)
