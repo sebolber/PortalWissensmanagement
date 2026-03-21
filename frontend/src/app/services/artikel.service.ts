@@ -178,4 +178,16 @@ export class ArtikelService {
   applyPrompt(promptId: string, content: string, title?: string): Observable<{ result: string }> {
     return this.http.post<{ result: string }>(`${this.promptBase}/${promptId}/anwenden`, { content, title });
   }
+
+  // --- Export / Import ---
+
+  private readonly configBase = 'api/konfiguration';
+
+  exportAll(): Observable<Blob> {
+    return this.http.get(`${this.configBase}/export`, { responseType: 'blob' });
+  }
+
+  importAll(data: any): Observable<any> {
+    return this.http.post<any>(`${this.configBase}/import`, data);
+  }
 }
