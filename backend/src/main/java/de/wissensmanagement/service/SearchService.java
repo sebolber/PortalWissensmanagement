@@ -5,8 +5,14 @@ import de.wissensmanagement.repository.KnowledgeArticleRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
+/**
+ * Unified search service combining fulltext and similarity-based search.
+ * Supports three modes:
+ * - FULLTEXT: PostgreSQL tsvector-based search (exact word matching with stemming)
+ * - SEMANTIC: Trigram similarity search (fuzzy matching for paraphrased queries)
+ * - HYBRID: Combines both, boosting articles found by multiple strategies
+ */
 @Service
 public class SearchService {
 
@@ -22,10 +28,6 @@ public class SearchService {
         FULLTEXT, SEMANTIC, HYBRID
     }
 
-    /**
-     * Unified search combining fulltext and semantic search.
-     * Currently fulltext-only; semantic search is prepared for when embeddings are available.
-     */
     public List<SearchResult> search(String tenantId, String query, SearchMode mode, int limit) {
         if (query == null || query.isBlank()) {
             return List.of();
@@ -38,21 +40,17 @@ public class SearchService {
             List<KnowledgeArticle> fulltextResults = articleRepo.fullTextSearch(tenantId, query, limit);
             for (int i = 0; i < fulltextResults.size(); i++) {
                 KnowledgeArticle article = fulltextResults.get(i);
-                double score = 1.0 - (i * 0.05); // decreasing relevance
+                double score = 1.0 - (i * 0.05);
                 results.put(article.getId(), toSearchResult(article, score, "FULLTEXT"));
             }
         }
 
-        // Semantic search placeholder (HYBRID and SEMANTIC modes)
+        // Semantic/similarity search (HYBRID and SEMANTIC modes)
         if (mode == SearchMode.SEMANTIC || mode == SearchMode.HYBRID) {
-            // When vector embeddings are available, this will query the vector store.
-            // For now, fall back to a LIKE-based similarity heuristic for broader matches.
-            List<KnowledgeArticle> likeResults = articleRepo.searchByTenant(tenantId,
-                    de.wissensmanagement.enums.ArticleStatus.PUBLISHED, query,
-                    org.springframework.data.domain.PageRequest.of(0, limit)).getContent();
+            List<KnowledgeArticle> similarResults = articleRepo.similaritySearch(tenantId, query, limit);
 
-            for (int i = 0; i < likeResults.size(); i++) {
-                KnowledgeArticle article = likeResults.get(i);
+            for (int i = 0; i < similarResults.size(); i++) {
+                KnowledgeArticle article = similarResults.get(i);
                 if (!results.containsKey(article.getId())) {
                     double score = 0.8 - (i * 0.04);
                     results.put(article.getId(), toSearchResult(article, score, "SEMANTIC"));

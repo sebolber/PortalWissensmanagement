@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ArtikelService } from '../../services/artikel.service';
-import { Category, Grouping } from '../../models/artikel.model';
+import { ArticleTreeNode, Category, Grouping } from '../../models/artikel.model';
 
 @Component({
   selector: 'app-artikel-form',
@@ -164,6 +164,8 @@ export class ArtikelFormComponent implements OnInit {
   groupings: Grouping[] = [];
   saving = false;
   generatingSummary = false;
+  parentArticleId = '';
+  flatTree: ArticleTreeNode[] = [];
 
   // Dictation state
   isDictating = false;
@@ -177,6 +179,10 @@ export class ArtikelFormComponent implements OnInit {
   ngOnInit(): void {
     this.svc.listCategories().subscribe({ next: c => this.categories = c });
     this.svc.listGroupings().subscribe({ next: g => this.groupings = g });
+    this.svc.getTree().subscribe({
+      next: tree => this.flatTree = this.flattenTree(tree, 0),
+      error: () => {}
+    });
     this.editId = this.route.snapshot.paramMap.get('id');
     const parentParam = this.route.snapshot.queryParamMap.get('parent');
     if (parentParam) {
@@ -319,7 +325,7 @@ export class ArtikelFormComponent implements OnInit {
     this.structuring = true;
 
     this.svc.structureText(this.content).subscribe({
-      next: result => {
+      next: (result: { title: string; summary: string; content: string }) => {
         this.structuredPreview = result;
         this.structuring = false;
       },
@@ -328,6 +334,21 @@ export class ArtikelFormComponent implements OnInit {
         alert('Strukturierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
       }
     });
+  }
+
+  getTreePrefix(depth: number): string {
+    return '\u00A0\u00A0'.repeat(depth) + (depth > 0 ? '\u2514 ' : '');
+  }
+
+  private flattenTree(nodes: ArticleTreeNode[], depth: number): ArticleTreeNode[] {
+    let result: ArticleTreeNode[] = [];
+    for (const node of nodes) {
+      result.push({ ...node, depth });
+      if (node.children && node.children.length > 0) {
+        result = result.concat(this.flattenTree(node.children, depth + 1));
+      }
+    }
+    return result;
   }
 
   acceptStructured(): void {

@@ -9,7 +9,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -75,19 +74,33 @@ class SearchServiceTest {
     }
 
     @Test
-    void search_hybridMode_bootsArticlesFoundByBothMethods() {
+    void search_semanticMode_callsSimilaritySearch() {
+        KnowledgeArticle article = createArticle("art-1", "Urlaubsregelung", "Informationen zu Urlaubsanspruch");
+        when(articleRepo.similaritySearch(TENANT_ID, "Wie viele Urlaubstage habe ich?", 10))
+                .thenReturn(List.of(article));
+        when(hierarchyService.getBreadcrumb(eq(TENANT_ID), anyString())).thenReturn(List.of());
+
+        List<SearchService.SearchResult> results = searchService.search(TENANT_ID, "Wie viele Urlaubstage habe ich?",
+                SearchService.SearchMode.SEMANTIC, 10);
+
+        assertFalse(results.isEmpty());
+        assertEquals("SEMANTIC", results.get(0).searchType());
+        assertEquals("Urlaubsregelung", results.get(0).title());
+    }
+
+    @Test
+    void search_hybridMode_boostsArticlesFoundByBothMethods() {
         KnowledgeArticle article = createArticle("art-1", "Shared Result", "Content");
         when(articleRepo.fullTextSearch(eq(TENANT_ID), eq("query"), anyInt())).thenReturn(List.of(article));
-        when(articleRepo.searchByTenant(eq(TENANT_ID), eq(ArticleStatus.PUBLISHED), eq("query"), any()))
-                .thenReturn(new PageImpl<>(List.of(article)));
-        when(hierarchyService.getBreadcrumb(eq(TENANT_ID), anyString()))
-                .thenReturn(List.of());
+        when(articleRepo.similaritySearch(eq(TENANT_ID), eq("query"), anyInt())).thenReturn(List.of(article));
+        when(hierarchyService.getBreadcrumb(eq(TENANT_ID), anyString())).thenReturn(List.of());
 
         List<SearchService.SearchResult> results = searchService.search(TENANT_ID, "query", SearchService.SearchMode.HYBRID, 20);
 
         assertFalse(results.isEmpty());
-        // Article found by both methods should have HYBRID type
         assertEquals("HYBRID", results.get(0).searchType());
+        // Score should be boosted
+        assertTrue(results.get(0).relevanceScore() > 1.0 - 0.01);
     }
 
     @Test
@@ -143,5 +156,23 @@ class SearchServiceTest {
 
         assertNotNull(results.get(0).snippet());
         assertTrue(results.get(0).snippet().contains("Content text here"));
+    }
+
+    @Test
+    void search_hybridDeduplicatesResults() {
+        KnowledgeArticle a1 = createArticle("a1", "Article One", "Content One");
+        KnowledgeArticle a2 = createArticle("a2", "Article Two", "Content Two");
+        when(articleRepo.fullTextSearch(eq(TENANT_ID), eq("test"), anyInt())).thenReturn(List.of(a1));
+        when(articleRepo.similaritySearch(eq(TENANT_ID), eq("test"), anyInt())).thenReturn(List.of(a1, a2));
+        when(hierarchyService.getBreadcrumb(eq(TENANT_ID), anyString())).thenReturn(List.of());
+
+        List<SearchService.SearchResult> results = searchService.search(TENANT_ID, "test", SearchService.SearchMode.HYBRID, 20);
+
+        // a1 should appear once (as HYBRID) and a2 should appear once (as SEMANTIC)
+        assertEquals(2, results.size());
+        long hybridCount = results.stream().filter(r -> "HYBRID".equals(r.searchType())).count();
+        long semanticCount = results.stream().filter(r -> "SEMANTIC".equals(r.searchType())).count();
+        assertEquals(1, hybridCount);
+        assertEquals(1, semanticCount);
     }
 }

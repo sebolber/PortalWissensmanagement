@@ -5,8 +5,10 @@ import de.wissensmanagement.dto.*;
 import de.wissensmanagement.enums.ArticleStatus;
 import de.wissensmanagement.service.ArticleService;
 import de.wissensmanagement.service.FeedbackService;
+import de.wissensmanagement.service.HierarchyService;
 import de.wissensmanagement.service.LlmIntegrationService;
 import de.wissensmanagement.service.PermissionService;
+import de.wissensmanagement.service.SearchService;
 import de.wissensmanagement.service.TaskIntegrationService;
 import de.wissensmanagement.service.UsageTrackingService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -221,6 +223,16 @@ public class ArticleController {
                 "Du bist ein hilfreicher Assistent, der Zusammenfassungen fuer Wissensartikel erstellt.", turns);
 
         return ResponseEntity.ok(Map.of("summary", response.content()));
+    }
+
+    @GetMapping("/suche")
+    public List<SearchService.SearchResult> search(
+            @RequestParam String q,
+            @RequestParam(defaultValue = "HYBRID") SearchService.SearchMode mode,
+            @RequestParam(defaultValue = "20") int limit) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        return searchService.search(tenantId, q, mode, limit);
     }
 
     private String extractToken(HttpServletRequest request) {
