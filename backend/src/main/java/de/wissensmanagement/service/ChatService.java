@@ -120,9 +120,8 @@ public class ChatService {
             turns.add(new LlmIntegrationService.ChatTurn(role, msg.getContent()));
         }
 
-        // Get LLM config and call
-        LlmIntegrationService.LlmConfig llmConfig = llmService.getActiveLlmConfig(tenantId, jwtToken);
-        LlmIntegrationService.LlmResponse llmResponse = llmService.chat(llmConfig, systemPrompt, turns);
+        // Call LLM via PortalCore proxy
+        LlmIntegrationService.LlmResponse llmResponse = llmService.chat(tenantId, jwtToken, systemPrompt, turns);
 
         // Serialize source references
         String sourceRefsJson = null;
@@ -140,15 +139,15 @@ public class ChatService {
                 .role(ChatRole.ASSISTANT)
                 .content(llmResponse.content())
                 .sourceRefs(sourceRefsJson)
-                .modelId(llmConfig != null ? llmConfig.model() : null)
+                .modelId(llmResponse.model())
                 .tokenCount(llmResponse.tokenCount())
                 .build();
         messageRepo.save(assistantMsg);
 
         // Update session timestamp
         session.setUpdatedAt(java.time.LocalDateTime.now());
-        if (llmConfig != null) {
-            session.setModelConfigId(llmConfig.id());
+        if (llmResponse.configId() != null) {
+            session.setModelConfigId(llmResponse.configId());
         }
         sessionRepo.save(session);
 
@@ -162,7 +161,7 @@ public class ChatService {
                 session.getTitle(),
                 assistantMsg.getContent(),
                 sources,
-                llmConfig != null ? llmConfig.model() : null,
+                llmResponse.model(),
                 llmResponse.tokenCount()
         );
     }
