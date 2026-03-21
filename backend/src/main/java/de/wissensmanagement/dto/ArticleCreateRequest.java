@@ -15,6 +15,7 @@ public class ArticleCreateRequest {
 
     private String summary;
     private String categoryId;
+    private String groupingId;
     private List<String> tagNames;
     private boolean publicWithinTenant = true;
     private String linkedTaskId;

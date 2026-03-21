@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Article, ArticlePage, ArticleVersion, Category, Tag, Statistik } from '../models/artikel.model';
+import { Article, ArticlePage, ArticleVersion, Category, Grouping, Tag, Statistik } from '../models/artikel.model';
 
 @Injectable({ providedIn: 'root' })
 export class ArtikelService {
@@ -12,13 +12,14 @@ export class ArtikelService {
   constructor(private http: HttpClient) {}
 
   list(params: {
-    status?: string; q?: string; categoryId?: string;
+    status?: string; q?: string; categoryId?: string; groupingId?: string;
     page?: number; size?: number; sortBy?: string; sortDir?: string;
   } = {}): Observable<ArticlePage> {
     let p = new HttpParams();
     if (params.status) p = p.set('status', params.status);
     if (params.q) p = p.set('q', params.q);
     if (params.categoryId) p = p.set('categoryId', params.categoryId);
+    if (params.groupingId) p = p.set('groupingId', params.groupingId);
     p = p.set('page', String(params.page ?? 0));
     p = p.set('size', String(params.size ?? 20));
     if (params.sortBy) p = p.set('sortBy', params.sortBy);
@@ -88,5 +89,25 @@ export class ArtikelService {
 
   createTag(name: string): Observable<Tag> {
     return this.http.post<Tag>(this.tagBase, { name });
+  }
+
+  deleteTag(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.tagBase}/${id}`);
+  }
+
+  listGroupings(): Observable<Grouping[]> {
+    return this.http.get<Grouping[]>('api/gruppierungen');
+  }
+
+  createGrouping(name: string, description?: string): Observable<Grouping> {
+    return this.http.post<Grouping>('api/gruppierungen', { name, description });
+  }
+
+  deleteGrouping(id: string): Observable<void> {
+    return this.http.delete<void>(`api/gruppierungen/${id}`);
+  }
+
+  generateSummary(title: string, content: string): Observable<{ summary: string }> {
+    return this.http.post<{ summary: string }>(`${this.base}/generate-summary`, { title, content });
   }
 }

@@ -15,7 +15,9 @@ public interface KnowledgeChunkRepository extends JpaRepository<KnowledgeChunk, 
     void deleteByArticleId(String articleId);
 
     @Query(value = "SELECT c.* FROM wm_chunks c " +
+           "JOIN wm_articles a ON a.id = c.article_id " +
            "WHERE c.tenant_id = :tenantId " +
+           "AND a.status = 'PUBLISHED' " +
            "AND to_tsvector('german', c.content) @@ plainto_tsquery('german', :query) " +
            "ORDER BY ts_rank(to_tsvector('german', c.content), plainto_tsquery('german', :query)) DESC " +
            "LIMIT :limit", nativeQuery = true)

@@ -38,6 +38,10 @@ public class KnowledgeArticle {
     @JoinColumn(name = "category_id")
     private KnowledgeCategory category;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "grouping_id")
+    private KnowledgeGrouping grouping;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "wm_article_tags",

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ArtikelService } from '../../services/artikel.service';
-import { Article, Category } from '../../models/artikel.model';
+import { Article, Category, Grouping } from '../../models/artikel.model';
 
 @Component({
   selector: 'app-artikel-list',
@@ -26,6 +26,13 @@ import { Article, Category } from '../../models/artikel.model';
           <select [(ngModel)]="selectedCategory" (change)="load()">
             <option value="">Alle</option>
             <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Gruppierung</label>
+          <select [(ngModel)]="selectedGrouping" (change)="load()">
+            <option value="">Alle</option>
+            <option *ngFor="let g of groupings" [value]="g.id">{{ g.name }}</option>
           </select>
         </div>
         <div class="filter-field">
@@ -52,6 +59,7 @@ import { Article, Category } from '../../models/artikel.model';
             <p>{{ a.summary || (a.content | slice:0:180) }}{{ !a.summary && a.content.length > 180 ? '...' : '' }}</p>
           </div>
           <div class="article-badges">
+            <span *ngIf="a.grouping" class="grouping-badge">{{ a.grouping.name }}</span>
             <span *ngIf="a.category" class="tag">{{ a.category.name }}</span>
             <span class="status-badge" [class]="a.status.toLowerCase()">{{ statusLabel(a.status) }}</span>
           </div>
@@ -96,6 +104,7 @@ import { Article, Category } from '../../models/artikel.model';
     .article-meta { display: flex; gap: 0.75rem; font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem; align-items: center; flex-wrap: wrap; }
     .meta-tag { padding: 0.1rem 0.4rem; background: #f3f4f6; border-radius: 0.25rem; font-size: 0.6875rem; }
     .tag { padding: 0.2rem 0.6rem; background: #dbeafe; color: #1e40af; font-size: 0.6875rem; font-weight: 500; border-radius: 1rem; white-space: nowrap; }
+    .grouping-badge { padding: 0.2rem 0.6rem; background: #fef3c7; color: #92400e; font-size: 0.6875rem; font-weight: 500; border-radius: 1rem; white-space: nowrap; }
     .status-badge { padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; }
     .status-badge.published { background: #dcfce7; color: #166534; }
     .status-badge.draft { background: #fef3c7; color: #92400e; }
@@ -110,8 +119,10 @@ export class ArtikelListComponent implements OnInit {
 
   articles: Article[] = [];
   categories: Category[] = [];
+  groupings: Grouping[] = [];
   searchQuery = '';
   selectedCategory = '';
+  selectedGrouping = '';
   selectedStatus = '';
   loading = true;
   totalElements = 0;
@@ -121,6 +132,7 @@ export class ArtikelListComponent implements OnInit {
   ngOnInit(): void {
     this.load();
     this.svc.listCategories().subscribe({ next: c => this.categories = c });
+    this.svc.listGroupings().subscribe({ next: g => this.groupings = g });
   }
 
   load(): void {
@@ -129,6 +141,7 @@ export class ArtikelListComponent implements OnInit {
       status: this.selectedStatus || undefined,
       q: this.searchQuery || undefined,
       categoryId: this.selectedCategory || undefined,
+      groupingId: this.selectedGrouping || undefined,
       page: this.currentPage,
       size: 20,
     }).subscribe({

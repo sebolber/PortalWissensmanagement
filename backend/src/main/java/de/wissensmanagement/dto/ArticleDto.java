@@ -15,6 +15,7 @@ public class ArticleDto {
     private String summary;
     private ArticleStatus status;
     private CategoryDto category;
+    private GroupingDto grouping;
     private List<TagDto> tags;
     private String createdBy;
     private String updatedBy;

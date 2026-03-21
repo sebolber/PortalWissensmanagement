@@ -57,7 +57,21 @@ export class ChatService {
     return this.http.get<ChatMessageDto[]>(`${this.base}/sessions/${sessionId}/messages`);
   }
 
-  send(sessionId: string | null, message: string): Observable<ChatResponseDto> {
-    return this.http.post<ChatResponseDto>(`${this.base}/send`, { sessionId, message });
+  send(sessionId: string | null, message: string, modelConfigId?: string | null): Observable<ChatResponseDto> {
+    const body: any = { sessionId, message };
+    if (modelConfigId) body.modelConfigId = modelConfigId;
+    return this.http.post<ChatResponseDto>(`${this.base}/send`, body);
   }
+
+  listLlmModels(): Observable<LlmModelDto[]> {
+    return this.http.get<LlmModelDto[]>(`${this.base}/llm-models`);
+  }
+}
+
+export interface LlmModelDto {
+  id: string;
+  name: string;
+  provider: string;
+  model: string;
+  isActive: boolean;
 }
