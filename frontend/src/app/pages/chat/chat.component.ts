@@ -2,7 +2,7 @@ import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewChecked } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { ChatService, ChatSessionDto, SourceRef } from '../../services/chat.service';
+import { ChatService, ChatSessionDto, LlmModelDto, SourceRef } from '../../services/chat.service';
 
 interface DisplayMessage {
   role: string;
@@ -45,6 +45,13 @@ interface DisplayMessage {
       <div class="chat-main">
         <div class="chat-header">
           <h1>{{ currentSessionTitle || 'Wissenschat' }}</h1>
+          <select *ngIf="llmModels.length > 0" class="model-select" [(ngModel)]="selectedModelId"
+                  title="LLM-Modell waehlen">
+            <option value="">Standard-Modell</option>
+            <option *ngFor="let m of llmModels" [value]="m.id">
+              {{ m.name || m.model }} ({{ m.provider }}){{ m.isActive ? ' *' : '' }}
+            </option>
+          </select>
           <span *ngIf="lastModel" class="model-badge">{{ lastModel }}</span>
         </div>
 
@@ -107,6 +114,7 @@ interface DisplayMessage {
     .chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #fafafa; }
     .chat-header { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem; border-bottom: 1px solid #e5e7eb; background: #fff; }
     .chat-header h1 { font-size: 1rem; font-weight: 600; flex: 1; }
+    .model-select { font-size: 0.75rem; padding: 0.25rem 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; background: #f9fafb; color: #374151; max-width: 200px; }
     .model-badge { font-size: 0.6875rem; padding: 0.15rem 0.5rem; background: #f3f4f6; border-radius: 0.25rem; color: #6b7280; }
     .messages-area { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
     .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: #9ca3af; }
@@ -142,6 +150,8 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
 
   sessions: ChatSessionDto[] = [];
+  llmModels: LlmModelDto[] = [];
+  selectedModelId = '';
   currentSessionId: string | null = null;
   currentSessionTitle = '';
   messages: DisplayMessage[] = [];
@@ -154,6 +164,10 @@ export class ChatComponent implements OnInit, AfterViewChecked {
 
   ngOnInit(): void {
     this.loadSessions();
+    this.chatSvc.listLlmModels().subscribe({
+      next: models => this.llmModels = models,
+      error: () => {}
+    });
   }
 
   ngAfterViewChecked(): void {
@@ -222,7 +236,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     this.errorMsg = '';
     this.shouldScroll = true;
 
-    this.chatSvc.send(this.currentSessionId, text).subscribe({
+    this.chatSvc.send(this.currentSessionId, text, this.selectedModelId || null).subscribe({
       next: response => {
         this.currentSessionId = response.sessionId;
         this.currentSessionTitle = response.sessionTitle;
@@ -241,7 +255,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
       },
       error: err => {
         this.loading = false;
-        this.errorMsg = err.error?.message || 'Fehler bei der Verarbeitung. Bitte versuchen Sie es erneut.';
+        this.errorMsg = err.error?.error || err.error?.message || 'Fehler bei der Verarbeitung. Bitte versuchen Sie es erneut.';
       }
     });
   }

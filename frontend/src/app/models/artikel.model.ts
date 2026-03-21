@@ -1,3 +1,9 @@
+export interface Grouping {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
 export interface Article {
   id: string;
   tenantId: string;
@@ -15,6 +21,7 @@ export interface Article {
   childCount: number;
   // Category and Tags
   category: Category | null;
+  grouping: Grouping | null;
   tags: Tag[];
   createdBy: string;
   updatedBy: string;

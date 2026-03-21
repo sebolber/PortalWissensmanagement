@@ -25,6 +25,7 @@ public class ArticleDto {
     private int childCount;
 
     private CategoryDto category;
+    private GroupingDto grouping;
     private List<TagDto> tags;
     private String createdBy;
     private String updatedBy;

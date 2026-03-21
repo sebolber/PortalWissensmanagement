@@ -15,6 +15,7 @@ public class ArticleUpdateRequest {
 
     private String summary;
     private String categoryId;
+    private String groupingId;
     private List<String> tagNames;
     private boolean publicWithinTenant = true;
     private String linkedTaskId;

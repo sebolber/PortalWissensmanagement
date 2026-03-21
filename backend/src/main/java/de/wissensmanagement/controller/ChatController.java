@@ -4,9 +4,13 @@ import de.wissensmanagement.config.SecurityHelper;
 import de.wissensmanagement.entity.ChatMessage;
 import de.wissensmanagement.entity.ChatSession;
 import de.wissensmanagement.service.ChatService;
+import de.wissensmanagement.service.LlmIntegrationService;
 import de.wissensmanagement.service.PermissionService;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
@@ -18,6 +22,10 @@ public class ChatController {
     private final ChatService chatService;
     private final SecurityHelper securityHelper;
     private final PermissionService permissionService;
+    private final RestClient restClient = RestClient.create();
+
+    @Value("${portal.core.base-url:http://portal-backend:8080}")
+    private String portalCoreBaseUrl;
 
     public ChatController(ChatService chatService, SecurityHelper securityHelper,
                           PermissionService permissionService) {
@@ -106,7 +114,35 @@ public class ChatController {
                 m.getCreatedAt() != null ? m.getCreatedAt().toString() : null);
     }
 
-    record SendRequest(String sessionId, String message) {}
+    @SuppressWarnings("unchecked")
+    @GetMapping("/llm-models")
+    public ResponseEntity<List<Map<String, Object>>> listLlmModels() {
+        String jwtToken = securityHelper.getCurrentToken();
+        permissionService.requireChat(jwtToken);
+        String tenantId = securityHelper.getCurrentTenantId();
+        try {
+            List<Map<String, Object>> configs = restClient.get()
+                    .uri(portalCoreBaseUrl + "/api/tenants/" + tenantId + "/profile/llm")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtToken)
+                    .retrieve()
+                    .body(List.class);
+            if (configs == null) return ResponseEntity.ok(List.of());
+            List<Map<String, Object>> result = configs.stream()
+                    .map(c -> Map.<String, Object>of(
+                            "id", c.getOrDefault("id", ""),
+                            "name", c.getOrDefault("name", ""),
+                            "provider", c.getOrDefault("provider", ""),
+                            "model", c.getOrDefault("model", ""),
+                            "isActive", c.getOrDefault("isActive", false)
+                    ))
+                    .toList();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    record SendRequest(String sessionId, String message, String modelConfigId) {}
 
     record ChatResponseDto(String sessionId, String sessionTitle, String content,
                            List<ChatService.SourceRef> sources, String model, int tokenCount) {}

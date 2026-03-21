@@ -22,6 +22,7 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
     table: wm_schema_history
+    validate-on-migrate: false
 
 portal:
   jwt:

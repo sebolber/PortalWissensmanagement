@@ -4,6 +4,7 @@ import de.wissensmanagement.dto.*;
 import de.wissensmanagement.entity.*;
 import de.wissensmanagement.enums.ArticleStatus;
 import de.wissensmanagement.repository.*;
+import de.wissensmanagement.repository.KnowledgeGroupingRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +24,7 @@ public class ArticleService {
     private final KnowledgeArticleRepository articleRepo;
     private final KnowledgeCategoryRepository categoryRepo;
     private final KnowledgeTagRepository tagRepo;
+    private final KnowledgeGroupingRepository groupingRepo;
     private final ArticleVersionRepository versionRepo;
     private final ChunkService chunkService;
     private final HierarchyService hierarchyService;
@@ -30,19 +32,21 @@ public class ArticleService {
     public ArticleService(KnowledgeArticleRepository articleRepo,
                            KnowledgeCategoryRepository categoryRepo,
                            KnowledgeTagRepository tagRepo,
+                           KnowledgeGroupingRepository groupingRepo,
                            ArticleVersionRepository versionRepo,
                            ChunkService chunkService,
                            HierarchyService hierarchyService) {
         this.articleRepo = articleRepo;
         this.categoryRepo = categoryRepo;
         this.tagRepo = tagRepo;
+        this.groupingRepo = groupingRepo;
         this.versionRepo = versionRepo;
         this.chunkService = chunkService;
         this.hierarchyService = hierarchyService;
     }
 
     public Page<ArticleDto> listArticles(String tenantId, ArticleStatus status, String search,
-                                          String categoryId, Pageable pageable) {
+                                          String categoryId, String groupingId, Pageable pageable) {
         Page<KnowledgeArticle> page;
 
         if (search != null && !search.isBlank()) {
@@ -52,6 +56,14 @@ public class ArticleService {
             page = articleRepo.findByTenantIdAndStatus(tenantId, status, pageable);
         } else {
             page = articleRepo.findByTenantId(tenantId, pageable);
+        }
+
+        // Post-filter by groupingId if provided
+        if (groupingId != null && !groupingId.isBlank()) {
+            var filtered = page.getContent().stream()
+                    .filter(a -> a.getGrouping() != null && groupingId.equals(a.getGrouping().getId()))
+                    .toList();
+            page = new org.springframework.data.domain.PageImpl<>(filtered, pageable, filtered.size());
         }
 
         return page.map(this::toDto);
@@ -87,6 +99,10 @@ public class ArticleService {
         if (req.getCategoryId() != null) {
             categoryRepo.findByIdAndTenantId(req.getCategoryId(), tenantId)
                     .ifPresent(article::setCategory);
+        }
+        if (req.getGroupingId() != null) {
+            groupingRepo.findByIdAndTenantId(req.getGroupingId(), tenantId)
+                    .ifPresent(article::setGrouping);
         }
 
         article = articleRepo.save(article);
@@ -131,6 +147,12 @@ public class ArticleService {
                     .ifPresent(article::setCategory);
         } else {
             article.setCategory(null);
+        }
+        if (req.getGroupingId() != null) {
+            groupingRepo.findByIdAndTenantId(req.getGroupingId(), tenantId)
+                    .ifPresent(article::setGrouping);
+        } else {
+            article.setGrouping(null);
         }
 
         resolveTags(article, tenantId, req.getTagNames());
@@ -265,6 +287,11 @@ public class ArticleService {
                         .description(a.getCategory().getDescription())
                         .parentId(a.getCategory().getParentId())
                         .orderIndex(a.getCategory().getOrderIndex())
+                        .build() : null)
+                .grouping(a.getGrouping() != null ? GroupingDto.builder()
+                        .id(a.getGrouping().getId())
+                        .name(a.getGrouping().getName())
+                        .description(a.getGrouping().getDescription())
                         .build() : null)
                 .tags(a.getTags() != null ? a.getTags().stream()
                         .map(t -> TagDto.builder().id(t.getId()).name(t.getName()).build())

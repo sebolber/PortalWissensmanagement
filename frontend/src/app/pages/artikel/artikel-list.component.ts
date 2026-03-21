@@ -3,8 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ArtikelService } from '../../services/artikel.service';
-import { Article, Category } from '../../models/artikel.model';
-import { ArticleTreeComponent } from '../../components/article-tree.component';
+import { Article, Category, Grouping } from '../../models/artikel.model';
 
 @Component({
   selector: 'app-artikel-list',
@@ -20,8 +19,28 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
             {{ treeSidebarCollapsed ? '&#9654;' : '&#9664;' }}
           </button>
         </div>
-        <app-article-tree *ngIf="!treeSidebarCollapsed"></app-article-tree>
-      </aside>
+        <div class="filter-field">
+          <label>Gruppierung</label>
+          <select [(ngModel)]="selectedGrouping" (change)="load()">
+            <option value="">Alle</option>
+            <option *ngFor="let g of groupings" [value]="g.id">{{ g.name }}</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label>Status</label>
+          <select [(ngModel)]="selectedStatus" (change)="load()">
+            <option value="">Alle</option>
+            <option value="PUBLISHED">Veroeffentlicht</option>
+            <option value="DRAFT">Entwurf</option>
+            <option value="ARCHIVED">Archiviert</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-info" *ngIf="totalElements > 0">
+      {{ totalElements }} Artikel gefunden
+    </div>
 
       <!-- Main content -->
       <div class="list-main">
@@ -31,30 +50,10 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
             <a routerLink="/suche" class="btn btn-secondary">&#128269; Suche</a>
             <a routerLink="/artikel/neu" class="btn btn-primary">+ Neuer Artikel</a>
           </div>
-        </div>
-
-        <div class="card filter-bar">
-          <div class="filter-row">
-            <div class="search-field">
-              <label>Schnellsuche</label>
-              <input type="text" [(ngModel)]="searchQuery" (input)="onSearch()" placeholder="Artikel durchsuchen...">
-            </div>
-            <div class="filter-field">
-              <label>Kategorie</label>
-              <select [(ngModel)]="selectedCategory" (change)="load()">
-                <option value="">Alle</option>
-                <option *ngFor="let c of categories" [value]="c.id">{{ c.name }}</option>
-              </select>
-            </div>
-            <div class="filter-field">
-              <label>Status</label>
-              <select [(ngModel)]="selectedStatus" (change)="load()">
-                <option value="">Alle</option>
-                <option value="PUBLISHED">Veroeffentlicht</option>
-                <option value="DRAFT">Entwurf</option>
-                <option value="ARCHIVED">Archiviert</option>
-              </select>
-            </div>
+          <div class="article-badges">
+            <span *ngIf="a.grouping" class="grouping-badge">{{ a.grouping.name }}</span>
+            <span *ngIf="a.category" class="tag">{{ a.category.name }}</span>
+            <span class="status-badge" [class]="a.status.toLowerCase()">{{ statusLabel(a.status) }}</span>
           </div>
         </div>
 
@@ -132,6 +131,7 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
     .article-meta { display: flex; gap: 0.75rem; font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem; align-items: center; flex-wrap: wrap; }
     .meta-tag { padding: 0.1rem 0.4rem; background: #f3f4f6; border-radius: 0.25rem; font-size: 0.6875rem; }
     .tag { padding: 0.2rem 0.6rem; background: #dbeafe; color: #1e40af; font-size: 0.6875rem; font-weight: 500; border-radius: 1rem; white-space: nowrap; }
+    .grouping-badge { padding: 0.2rem 0.6rem; background: #fef3c7; color: #92400e; font-size: 0.6875rem; font-weight: 500; border-radius: 1rem; white-space: nowrap; }
     .status-badge { padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; }
     .status-badge.published { background: #dcfce7; color: #166534; }
     .status-badge.draft { background: #fef3c7; color: #92400e; }
@@ -149,8 +149,10 @@ export class ArtikelListComponent implements OnInit {
 
   articles: Article[] = [];
   categories: Category[] = [];
+  groupings: Grouping[] = [];
   searchQuery = '';
   selectedCategory = '';
+  selectedGrouping = '';
   selectedStatus = '';
   loading = true;
   totalElements = 0;
@@ -161,6 +163,7 @@ export class ArtikelListComponent implements OnInit {
   ngOnInit(): void {
     this.load();
     this.svc.listCategories().subscribe({ next: c => this.categories = c });
+    this.svc.listGroupings().subscribe({ next: g => this.groupings = g });
   }
 
   load(): void {
@@ -169,6 +172,7 @@ export class ArtikelListComponent implements OnInit {
       status: this.selectedStatus || undefined,
       q: this.searchQuery || undefined,
       categoryId: this.selectedCategory || undefined,
+      groupingId: this.selectedGrouping || undefined,
       page: this.currentPage,
       size: 20,
     }).subscribe({
