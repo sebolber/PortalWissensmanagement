@@ -5,6 +5,15 @@ export interface Article {
   content: string;
   summary: string;
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  // Hierarchy
+  parentArticleId: string | null;
+  sortOrder: number;
+  treePath: string | null;
+  depth: number;
+  children?: Article[];
+  breadcrumb?: BreadcrumbItem[];
+  childCount: number;
+  // Category and Tags
   category: Category | null;
   tags: Tag[];
   createdBy: string;
@@ -19,6 +28,23 @@ export interface Article {
   averageRating: number;
   ratingCount: number;
   lastUsedAt: string | null;
+}
+
+export interface BreadcrumbItem {
+  id: string;
+  title: string;
+}
+
+export interface ArticleTreeNode {
+  id: string;
+  title: string;
+  status: string;
+  parentArticleId: string | null;
+  sortOrder: number;
+  depth: number;
+  totalDescendants: number;
+  children: ArticleTreeNode[];
+  expanded?: boolean; // UI state
 }
 
 export interface Category {
@@ -58,6 +84,25 @@ export interface Statistik {
   veroeffentlicht: number;
   entwuerfe: number;
   kategorien: number;
+}
+
+export interface SearchResult {
+  id: string;
+  title: string;
+  summary: string | null;
+  snippet: string;
+  relevanceScore: number;
+  searchType: string;
+  breadcrumb: string[];
+  status: string;
+  parentArticleId: string | null;
+  depth: number;
+}
+
+export interface StructuredResult {
+  title: string;
+  summary: string;
+  content: string;
 }
 
 export interface ChatSession {

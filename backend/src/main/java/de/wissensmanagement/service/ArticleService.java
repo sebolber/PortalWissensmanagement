@@ -25,17 +25,20 @@ public class ArticleService {
     private final KnowledgeTagRepository tagRepo;
     private final ArticleVersionRepository versionRepo;
     private final ChunkService chunkService;
+    private final HierarchyService hierarchyService;
 
     public ArticleService(KnowledgeArticleRepository articleRepo,
                            KnowledgeCategoryRepository categoryRepo,
                            KnowledgeTagRepository tagRepo,
                            ArticleVersionRepository versionRepo,
-                           ChunkService chunkService) {
+                           ChunkService chunkService,
+                           HierarchyService hierarchyService) {
         this.articleRepo = articleRepo;
         this.categoryRepo = categoryRepo;
         this.tagRepo = tagRepo;
         this.versionRepo = versionRepo;
         this.chunkService = chunkService;
+        this.hierarchyService = hierarchyService;
     }
 
     public Page<ArticleDto> listArticles(String tenantId, ArticleStatus status, String search,
@@ -78,6 +81,7 @@ public class ArticleService {
                 .createdBy(userId)
                 .publicWithinTenant(req.isPublicWithinTenant())
                 .linkedTaskId(req.getLinkedTaskId())
+                .parentArticleId(req.getParentArticleId())
                 .build();
 
         if (req.getCategoryId() != null) {
@@ -86,6 +90,10 @@ public class ArticleService {
         }
 
         article = articleRepo.save(article);
+
+        // Initialize hierarchy (treePath, depth, sortOrder)
+        hierarchyService.initializeHierarchy(article);
+
         resolveTags(article, tenantId, req.getTagNames());
         article = articleRepo.save(article);
 
@@ -150,7 +158,17 @@ public class ArticleService {
     @Transactional
     public void deleteArticle(String tenantId, String id) {
         KnowledgeArticle article = findByTenant(tenantId, id);
+        // Reparent children to this article's parent (or make them root)
+        List<KnowledgeArticle> children = hierarchyService.getChildren(tenantId, id);
+        for (KnowledgeArticle child : children) {
+            child.setParentArticleId(article.getParentArticleId());
+            articleRepo.save(child);
+        }
         articleRepo.delete(article);
+        // Recalculate paths for reparented children
+        for (KnowledgeArticle child : children) {
+            hierarchyService.initializeHierarchy(child);
+        }
     }
 
     public List<ArticleVersionDto> getVersionHistory(String tenantId, String id) {
@@ -225,6 +243,8 @@ public class ArticleService {
     }
 
     public ArticleDto toDto(KnowledgeArticle a) {
+        int childCount = articleRepo.countChildren(a.getTenantId(), a.getId());
+
         return ArticleDto.builder()
                 .id(a.getId())
                 .tenantId(a.getTenantId())
@@ -232,6 +252,13 @@ public class ArticleService {
                 .content(a.getContent())
                 .summary(a.getSummary())
                 .status(a.getStatus())
+                // Hierarchy
+                .parentArticleId(a.getParentArticleId())
+                .sortOrder(a.getSortOrder())
+                .treePath(a.getTreePath())
+                .depth(a.getDepth())
+                .childCount(childCount)
+                .breadcrumb(hierarchyService.getBreadcrumb(a.getTenantId(), a.getId()))
                 .category(a.getCategory() != null ? CategoryDto.builder()
                         .id(a.getCategory().getId())
                         .name(a.getCategory().getName())
@@ -255,6 +282,19 @@ public class ArticleService {
                 .averageRating(a.getAverageRating())
                 .ratingCount(a.getRatingCount())
                 .lastUsedAt(a.getLastUsedAt())
+                .build();
+    }
+
+    public ArticleDto toDtoLight(KnowledgeArticle a) {
+        return ArticleDto.builder()
+                .id(a.getId())
+                .title(a.getTitle())
+                .summary(a.getSummary())
+                .status(a.getStatus())
+                .parentArticleId(a.getParentArticleId())
+                .depth(a.getDepth())
+                .sortOrder(a.getSortOrder())
+                .createdAt(a.getCreatedAt())
                 .build();
     }
 }
