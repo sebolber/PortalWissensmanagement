@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Article, ArticlePage, ArticleVersion, Category, Grouping, Tag, Statistik } from '../models/artikel.model';
+import { Article, ArticlePage, ArticleVersion, ArticleTreeNode, BreadcrumbItem, Category, Grouping, SearchResult, StructuredResult, Tag, Statistik } from '../models/artikel.model';
 
 @Injectable({ providedIn: 'root' })
 export class ArtikelService {
@@ -143,5 +143,9 @@ export class ArtikelService {
 
   generateSummary(title: string, content: string): Observable<{ summary: string }> {
     return this.http.post<{ summary: string }>(`${this.base}/generate-summary`, { title, content });
+  }
+
+  structureText(content: string): Observable<StructuredResult> {
+    return this.http.post<StructuredResult>(`${this.base}/structure`, { content });
   }
 }

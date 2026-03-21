@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ArtikelService } from '../../services/artikel.service';
+import { ArticleTreeComponent } from '../../components/article-tree.component';
 import { Article, Category, Grouping } from '../../models/artikel.model';
 
 @Component({
@@ -19,14 +20,15 @@ import { Article, Category, Grouping } from '../../models/artikel.model';
             {{ treeSidebarCollapsed ? '&#9654;' : '&#9664;' }}
           </button>
         </div>
-        <div class="filter-field">
+        <app-article-tree *ngIf="!treeSidebarCollapsed"></app-article-tree>
+        <div class="filter-field" style="padding: 0.5rem;">
           <label>Gruppierung</label>
           <select [(ngModel)]="selectedGrouping" (change)="load()">
             <option value="">Alle</option>
             <option *ngFor="let g of groupings" [value]="g.id">{{ g.name }}</option>
           </select>
         </div>
-        <div class="filter-field">
+        <div class="filter-field" style="padding: 0 0.5rem 0.5rem;">
           <label>Status</label>
           <select [(ngModel)]="selectedStatus" (change)="load()">
             <option value="">Alle</option>
@@ -35,12 +37,7 @@ import { Article, Category, Grouping } from '../../models/artikel.model';
             <option value="ARCHIVED">Archiviert</option>
           </select>
         </div>
-      </div>
-    </div>
-
-    <div class="results-info" *ngIf="totalElements > 0">
-      {{ totalElements }} Artikel gefunden
-    </div>
+      </aside>
 
       <!-- Main content -->
       <div class="list-main">
@@ -49,11 +46,6 @@ import { Article, Category, Grouping } from '../../models/artikel.model';
           <div class="header-actions">
             <a routerLink="/suche" class="btn btn-secondary">&#128269; Suche</a>
             <a routerLink="/artikel/neu" class="btn btn-primary">+ Neuer Artikel</a>
-          </div>
-          <div class="article-badges">
-            <span *ngIf="a.grouping" class="grouping-badge">{{ a.grouping.name }}</span>
-            <span *ngIf="a.category" class="tag">{{ a.category.name }}</span>
-            <span class="status-badge" [class]="a.status.toLowerCase()">{{ statusLabel(a.status) }}</span>
           </div>
         </div>
 
