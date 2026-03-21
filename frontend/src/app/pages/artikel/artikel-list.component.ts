@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ArtikelService } from '../../services/artikel.service';
 import { Article, Category, Grouping } from '../../models/artikel.model';
+import { ArticleTreeComponent } from '../../components/article-tree.component';
 
 @Component({
   selector: 'app-artikel-list',
