@@ -273,7 +273,10 @@ export class ArtikelFormComponent implements OnInit {
         this.summary = res.summary;
         this.generatingSummary = false;
       },
-      error: () => this.generatingSummary = false,
+      error: (err) => {
+        this.generatingSummary = false;
+        alert(err.error?.error || 'KI-Zusammenfassung fehlgeschlagen. Bitte pruefen Sie die LLM-Konfiguration.');
+      },
     });
   }
 
@@ -408,7 +411,10 @@ export class ArtikelFormComponent implements OnInit {
         this.summary = res.result;
         this.generatingSummary = false;
       },
-      error: () => this.generatingSummary = false
+      error: (err) => {
+        this.generatingSummary = false;
+        alert(err.error?.error || 'KI-Zusammenfassung fehlgeschlagen. Bitte pruefen Sie die LLM-Konfiguration.');
+      }
     });
   }
 
@@ -421,9 +427,9 @@ export class ArtikelFormComponent implements OnInit {
         this.contentPreview = res.result;
         this.applyingContent = false;
       },
-      error: () => {
+      error: (err) => {
         this.applyingContent = false;
-        alert('Verarbeitung fehlgeschlagen. Bitte versuchen Sie es erneut.');
+        alert(err.error?.error || 'Verarbeitung fehlgeschlagen. Bitte pruefen Sie die LLM-Konfiguration.');
       }
     });
   }

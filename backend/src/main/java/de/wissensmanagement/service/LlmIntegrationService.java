@@ -35,44 +35,50 @@ public class LlmIntegrationService {
     @SuppressWarnings("unchecked")
     public LlmResponse chat(String tenantId, String jwtToken, String systemPrompt,
                              List<ChatTurn> conversationHistory) {
+        List<Map<String, String>> messages = conversationHistory.stream()
+                .map(turn -> Map.of("role", turn.role(), "content", turn.content()))
+                .toList();
+
+        Map<String, Object> requestBody = Map.of(
+                "systemPrompt", systemPrompt,
+                "messages", messages
+        );
+
+        Map<String, Object> response;
         try {
-            List<Map<String, String>> messages = conversationHistory.stream()
-                    .map(turn -> Map.of("role", turn.role(), "content", turn.content()))
-                    .toList();
-
-            Map<String, Object> requestBody = Map.of(
-                    "systemPrompt", systemPrompt,
-                    "messages", messages
-            );
-
-            Map<String, Object> response = restClient.post()
+            response = restClient.post()
                     .uri(portalCoreBaseUrl + "/api/tenants/" + tenantId + "/profile/llm/chat")
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwtToken)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(requestBody)
                     .retrieve()
                     .body(Map.class);
-
-            if (response == null) {
-                return new LlmResponse("Keine Antwort vom LLM-Service erhalten.", null, null, 0);
-            }
-
-            String content = (String) response.get("content");
-            String model = (String) response.get("model");
-            String configId = (String) response.get("configId");
-            int tokenCount = response.get("tokenCount") != null
-                    ? ((Number) response.get("tokenCount")).intValue() : 0;
-
-            if (content == null || content.isBlank()) {
-                return new LlmResponse("Keine Antwort vom LLM erhalten. Bitte pruefen Sie die LLM-Konfiguration.", model, configId, tokenCount);
-            }
-
-            return new LlmResponse(content, model, configId, tokenCount);
         } catch (Exception e) {
             log.error("LLM chat proxy call failed: {}", e.getMessage(), e);
-            return new LlmResponse(
-                    "Kein LLM konfiguriert. Bitte konfigurieren Sie eine KI-Verbindung in den Mandanteneinstellungen.",
-                    null, null, 0);
+            throw new LlmException("Kein LLM konfiguriert oder LLM-Aufruf fehlgeschlagen. "
+                    + "Bitte pruefen Sie die KI-Verbindung in den Mandanteneinstellungen.");
+        }
+
+        if (response == null) {
+            throw new LlmException("Keine Antwort vom LLM-Service erhalten.");
+        }
+
+        String content = (String) response.get("content");
+        String model = (String) response.get("model");
+        String configId = (String) response.get("configId");
+        int tokenCount = response.get("tokenCount") != null
+                ? ((Number) response.get("tokenCount")).intValue() : 0;
+
+        if (content == null || content.isBlank()) {
+            throw new LlmException("Keine Antwort vom LLM erhalten. Bitte pruefen Sie die LLM-Konfiguration.");
+        }
+
+        return new LlmResponse(content, model, configId, tokenCount);
+    }
+
+    public static class LlmException extends RuntimeException {
+        public LlmException(String message) {
+            super(message);
         }
     }
 
