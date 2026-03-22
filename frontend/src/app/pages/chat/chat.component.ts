@@ -2,13 +2,14 @@ import { Component, inject, OnInit, ViewChild, ElementRef, AfterViewChecked } fr
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { ChatService, ChatSessionDto, LlmModelDto, SourceRef } from '../../services/chat.service';
+import { ChatService, ChatSessionDto, LlmModelDto, SourceRef, RetrievalTraceInfo } from '../../services/chat.service';
 
 interface DisplayMessage {
   role: string;
   content: string;
   sources?: SourceRef[];
   model?: string | null;
+  retrievalTrace?: RetrievalTraceInfo[] | null;
 }
 
 @Component({
@@ -53,6 +54,9 @@ interface DisplayMessage {
             </option>
           </select>
           <span *ngIf="lastModel" class="model-badge">{{ lastModel }}</span>
+          <button class="btn-icon debug-toggle" (click)="showDebug = !showDebug"
+                  [title]="showDebug ? 'Debug ausblenden' : 'Debug einblenden'"
+                  [class.active]="showDebug">&#9881;</button>
         </div>
 
         <div class="messages-area" #messagesContainer>
@@ -72,6 +76,17 @@ interface DisplayMessage {
                     <span class="source-num">[{{ i + 1 }}]</span>
                     {{ s.title }}<span *ngIf="s.categoryName" class="source-cat"> &ndash; {{ s.categoryName }}</span>
                   </a>
+                </div>
+              </div>
+              <div *ngIf="showDebug && m.retrievalTrace && m.retrievalTrace.length > 0" class="trace-info">
+                <span class="trace-label" (click)="traceExpanded = !traceExpanded">
+                  Retrieval-Details {{ traceExpanded ? '&#9660;' : '&#9654;' }}
+                </span>
+                <div *ngIf="traceExpanded" class="trace-details">
+                  <div *ngFor="let t of m.retrievalTrace" class="trace-item">
+                    <span class="trace-strategy">{{ t.strategy }}</span>
+                    <span class="trace-count">{{ t.resultCount }} Treffer</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -142,6 +157,15 @@ interface DisplayMessage {
     .error-bar { padding: 0.5rem 1.5rem; background: #fef2f2; color: #dc2626; font-size: 0.8125rem; border-top: 1px solid #fecaca; }
     .input-area { display: flex; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background: #fff; }
     .input-area input { flex: 1; }
+    .debug-toggle { font-size: 1rem; opacity: 0.4; transition: opacity 0.15s; }
+    .debug-toggle:hover, .debug-toggle.active { opacity: 1; color: #006EC7; }
+    .trace-info { margin-top: 0.375rem; padding-top: 0.375rem; border-top: 1px dashed #e5e7eb; }
+    .trace-label { font-size: 0.6875rem; color: #9ca3af; cursor: pointer; user-select: none; }
+    .trace-label:hover { color: #6b7280; }
+    .trace-details { margin-top: 0.25rem; display: flex; flex-direction: column; gap: 0.125rem; }
+    .trace-item { display: flex; gap: 0.5rem; font-size: 0.625rem; color: #9ca3af; }
+    .trace-strategy { background: #f3f4f6; padding: 0.05rem 0.3rem; border-radius: 0.2rem; font-family: monospace; }
+    .trace-count { color: #6b7280; }
     @media (max-width: 768px) { .sessions-panel { display: none; } }
   `]
 })
@@ -160,6 +184,8 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   errorMsg = '';
   lastModel: string | null = null;
   sessionsPanelCollapsed = false;
+  showDebug = false;
+  traceExpanded = false;
   private shouldScroll = false;
 
   ngOnInit(): void {
@@ -246,7 +272,8 @@ export class ChatComponent implements OnInit, AfterViewChecked {
           role: 'assistant',
           content: response.content,
           sources: response.sources,
-          model: response.model
+          model: response.model,
+          retrievalTrace: response.retrievalTrace
         });
 
         this.loading = false;

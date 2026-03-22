@@ -26,6 +26,12 @@ export interface SourceRef {
   categoryName: string | null;
 }
 
+export interface RetrievalTraceInfo {
+  strategy: string;
+  query: string;
+  resultCount: number;
+}
+
 export interface ChatResponseDto {
   sessionId: string;
   sessionTitle: string;
@@ -33,6 +39,7 @@ export interface ChatResponseDto {
   sources: SourceRef[];
   model: string | null;
   tokenCount: number;
+  retrievalTrace: RetrievalTraceInfo[] | null;
 }
 
 @Injectable({ providedIn: 'root' })

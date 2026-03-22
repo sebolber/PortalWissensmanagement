@@ -105,6 +105,7 @@ import { Article, ArticleTreeNode, Category, Grouping } from '../../models/artik
                 <p>{{ a.summary || (a.content | slice:0:180) }}{{ !a.summary && a.content.length > 180 ? '...' : '' }}</p>
               </div>
               <div class="article-badges">
+                <span *ngIf="a.grouping" class="grouping-badge">{{ a.grouping.name }}</span>
                 <span *ngIf="a.category" class="tag">{{ a.category.name }}</span>
                 <span class="status-badge" [class]="a.status.toLowerCase()">{{ statusLabel(a.status) }}</span>
                 <span *ngIf="a.childCount > 0" class="children-badge">{{ a.childCount }} Unter</span>

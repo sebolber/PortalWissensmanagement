@@ -24,19 +24,26 @@ public class ChatService {
 
     private static final String SYSTEM_PROMPT = """
             Du bist ein KI-Assistent fuer eine unternehmensinterne Wissensdatenbank.
+            Deine Aufgabe ist es, Fragen auf Basis des bereitgestellten Kontexts zu beantworten.
 
-            STRIKTE REGELN - KEINE AUSNAHMEN:
-            1. Beantworte Fragen AUSSCHLIESSLICH auf Basis des unten bereitgestellten Kontexts.
-            2. Erfinde NIEMALS Informationen, Fakten oder Daten, die nicht im Kontext stehen.
-            3. Wenn der Kontext keine ausreichenden Informationen enthaelt, sage KLAR und EHRLICH:
-               "Zu dieser Frage liegen mir keine ausreichenden Informationen in der Wissensdatenbank vor."
-            4. Wenn du dir bei einer Antwort unsicher bist, kennzeichne dies deutlich mit:
-               "Hinweis: Diese Information konnte ich nicht eindeutig aus dem Kontext ableiten."
-            5. Verweise IMMER auf die konkreten Quellen (Artikeltitel), aus denen du Informationen verwendest.
-            6. Antworte immer auf Deutsch in klarer, professioneller Sprache.
-            7. Strukturiere laengere Antworten mit Absaetzen fuer bessere Lesbarkeit.
-            8. Gib KEINE Informationen aus dem Kontext preis, die Geheimnisse, Passwoerter oder
-               sicherheitsrelevante Konfigurationsdaten enthalten koennten.
+            REGELN:
+            1. Beantworte Fragen auf Basis des unten bereitgestellten Kontexts.
+            2. Erfinde KEINE Informationen, Fakten oder Daten, die nicht im Kontext stehen.
+            3. Interpretiere den Kontext inhaltlich. Du darfst:
+               - Informationen aus dem Kontext zusammenfassen
+               - Zusammenhaenge zwischen verschiedenen Kontextabschnitten herstellen
+               - sinnvolle Schlussfolgerungen ziehen, die sich direkt aus dem Kontext ergeben
+               - Fragen beantworten, auch wenn sie anders formuliert sind als der Kontext
+            4. Nur wenn der Kontext tatsaechlich KEINE relevanten Informationen zu der Frage enthaelt,
+               sage: "Zu dieser Frage liegen mir keine ausreichenden Informationen in der Wissensdatenbank vor."
+               Sei dabei nicht zu streng: Wenn der Kontext thematisch passende Informationen enthaelt,
+               nutze diese fuer eine Antwort.
+            5. Wenn du dir bei Teilen einer Antwort unsicher bist, kennzeichne dies mit:
+               "Hinweis: Dieser Aspekt ist im Kontext nicht vollstaendig beschrieben."
+            6. Verweise auf die konkreten Quellen (Artikeltitel in []-Klammern), aus denen du Informationen verwendest.
+            7. Antworte auf Deutsch in klarer, professioneller Sprache.
+            8. Strukturiere laengere Antworten mit Absaetzen.
+            9. Gib KEINE sicherheitsrelevanten Daten (Passwoerter, API-Keys, Secrets) aus dem Kontext preis.
 
             Kontext aus der Wissensdatenbank:
             ---
@@ -165,18 +172,27 @@ public class ChatService {
                 .map(s -> new SourceRef(s.articleId(), s.title(), s.categoryName()))
                 .collect(Collectors.toList());
 
+        // Build retrieval trace info
+        List<TraceInfo> traceInfos = retrieval.traces().stream()
+                .map(t -> new TraceInfo(t.strategy(), t.query(), t.resultCount()))
+                .toList();
+
         return new ChatResponse(
                 session.getId(),
                 session.getTitle(),
                 assistantMsg.getContent(),
                 sources,
                 llmResponse.model(),
-                llmResponse.tokenCount()
+                llmResponse.tokenCount(),
+                traceInfos
         );
     }
 
     public record ChatResponse(String sessionId, String sessionTitle, String content,
-                                List<SourceRef> sources, String model, int tokenCount) {}
+                                List<SourceRef> sources, String model, int tokenCount,
+                                List<TraceInfo> retrievalTrace) {}
 
     public record SourceRef(String articleId, String title, String categoryName) {}
+
+    public record TraceInfo(String strategy, String query, int resultCount) {}
 }

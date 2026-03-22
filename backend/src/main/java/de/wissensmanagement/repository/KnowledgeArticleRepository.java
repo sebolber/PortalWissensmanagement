@@ -61,6 +61,23 @@ public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArtic
            "LIMIT :limit", nativeQuery = true)
     List<KnowledgeArticle> fullTextSearch(String tenantId, String query, int limit);
 
+    /**
+     * Trigram similarity search - finds articles even with paraphrased queries.
+     */
+    @Query(value = "SELECT a.* FROM wm_articles a " +
+           "WHERE a.tenant_id = :tenantId AND a.status = 'PUBLISHED' " +
+           "AND (similarity(a.title, :query) > 0.1 " +
+           "     OR similarity(coalesce(a.summary, ''), :query) > 0.05 " +
+           "     OR similarity(a.content, :query) > 0.03 " +
+           "     OR a.title ILIKE CONCAT('%', :query, '%') " +
+           "     OR a.content ILIKE CONCAT('%', :query, '%') " +
+           "     OR coalesce(a.summary, '') ILIKE CONCAT('%', :query, '%')) " +
+           "ORDER BY greatest(similarity(a.title, :query) * 3, " +
+           "                  similarity(coalesce(a.summary, ''), :query) * 2, " +
+           "                  similarity(a.content, :query)) DESC " +
+           "LIMIT :limit", nativeQuery = true)
+    List<KnowledgeArticle> similaritySearch(String tenantId, String query, int limit);
+
     // --- Hierarchy queries ---
 
     List<KnowledgeArticle> findByTenantIdAndParentArticleIdIsNullOrderBySortOrderAsc(String tenantId);
