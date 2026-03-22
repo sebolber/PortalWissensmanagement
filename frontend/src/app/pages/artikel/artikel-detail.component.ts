@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ArtikelService } from '../../services/artikel.service';
-import { Article, ArticleVersion, BreadcrumbItem } from '../../models/artikel.model';
+import { Article, ArticleVersion } from '../../models/artikel.model';
+import { marked } from 'marked';
 
 @Component({
   selector: 'app-artikel-detail',
@@ -35,11 +36,11 @@ import { Article, ArticleVersion, BreadcrumbItem } from '../../models/artikel.mo
                 <span>{{ formatDate(article.createdAt) }}</span>
                 <span *ngIf="article.updatedAt">Aktualisiert: {{ formatDate(article.updatedAt) }}</span>
                 <span>{{ article.viewCount }} Aufrufe</span>
-                <span *ngIf="article.depth > 0" class="depth-badge">Ebene {{ article.depth + 1 }}</span>
               </div>
             </div>
             <div class="header-badges">
               <span *ngIf="article.category" class="tag">{{ article.category.name }}</span>
+              <span *ngIf="article.grouping" class="grouping-tag">{{ article.grouping.name }}</span>
             </div>
           </div>
 
@@ -51,7 +52,7 @@ import { Article, ArticleVersion, BreadcrumbItem } from '../../models/artikel.mo
             <strong>Zusammenfassung:</strong> {{ article.summary }}
           </div>
 
-          <div class="content-area" [innerHTML]="formatContent(article.content)"></div>
+          <div class="content-area markdown-body" [innerHTML]="renderedContent"></div>
 
           <!-- Rating -->
           <div class="rating-section">
@@ -141,12 +142,18 @@ import { Article, ArticleVersion, BreadcrumbItem } from '../../models/artikel.mo
     .detail-header { display: flex; justify-content: space-between; align-items: start; gap: 1rem; margin-bottom: 1rem; }
     .detail-header h1 { font-size: 1.375rem; font-weight: 600; margin-bottom: 0.375rem; }
     .meta-row { display: flex; gap: 0.75rem; font-size: 0.8125rem; color: #6b7280; align-items: center; flex-wrap: wrap; }
-    .depth-badge { padding: 0.1rem 0.4rem; background: #f0f9ff; color: #0369a1; font-size: 0.6875rem; border-radius: 0.25rem; }
     .tag { padding: 0.2rem 0.6rem; background: #dbeafe; color: #1e40af; font-size: 0.75rem; font-weight: 500; border-radius: 1rem; }
+    .grouping-tag { padding: 0.2rem 0.6rem; background: #fef3c7; color: #92400e; font-size: 0.75rem; font-weight: 500; border-radius: 1rem; }
+    .header-badges { display: flex; gap: 0.375rem; flex-wrap: wrap; }
     .tag-row { display: flex; gap: 0.375rem; flex-wrap: wrap; margin-bottom: 1rem; }
     .meta-tag { padding: 0.15rem 0.5rem; background: #f3f4f6; border-radius: 0.25rem; font-size: 0.75rem; color: #6b7280; }
     .summary-box { padding: 0.75rem 1rem; background: #f0f9ff; border-radius: 0.5rem; font-size: 0.875rem; color: #1e40af; margin-bottom: 1.5rem; line-height: 1.6; }
-    .content-area { font-size: 0.9375rem; line-height: 1.8; color: #374151; white-space: pre-wrap; margin-bottom: 1.5rem; }
+
+    /* Markdown content area */
+    .content-area { font-size: 0.9375rem; line-height: 1.8; color: #374151; margin-bottom: 1.5rem; }
+    .content-area :first-child { margin-top: 0; }
+    .content-area :last-child { margin-bottom: 0; }
+
     .status-badge { padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; }
     .status-badge.small { font-size: 0.5625rem; padding: 0.1rem 0.375rem; }
     .status-badge.published { background: #dcfce7; color: #166534; }
@@ -170,7 +177,6 @@ import { Article, ArticleVersion, BreadcrumbItem } from '../../models/artikel.mo
     .version-item:last-child { border-bottom: none; }
     .version-header { display: flex; justify-content: space-between; font-size: 0.875rem; }
     .version-note { font-size: 0.8125rem; color: #6b7280; margin-top: 0.25rem; }
-    .article-sidebar { }
     .sidebar-card { padding: 1rem; }
     .sidebar-title { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.75rem; }
     .sidebar-label { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; font-weight: 600; display: block; margin-bottom: 0.25rem; margin-top: 0.75rem; }
@@ -193,6 +199,7 @@ export class ArtikelDetailComponent implements OnInit {
   versions: ArticleVersion[] = [];
   loading = true;
   userRating = 0;
+  renderedContent = '';
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -205,14 +212,13 @@ export class ArtikelDetailComponent implements OnInit {
     this.svc.getById(id).subscribe({
       next: a => {
         this.article = a;
+        this.renderedContent = this.renderMarkdown(a.content);
         this.loading = false;
 
-        // Load children
         this.svc.getChildren(id).subscribe({
           next: children => this.childArticles = children,
         });
 
-        // Load parent
         if (a.parentArticleId) {
           this.svc.getById(a.parentArticleId, false).subscribe({
             next: parent => this.parentArticle = parent,
@@ -224,14 +230,23 @@ export class ArtikelDetailComponent implements OnInit {
     this.svc.getVersions(id).subscribe({ next: v => this.versions = v });
   }
 
+  private renderMarkdown(content: string): string {
+    if (!content) return '';
+    // If content looks like HTML (from old rich editor), display as-is
+    if (content.trim().startsWith('<') && /<\/?[a-z][\s\S]*>/i.test(content)) {
+      return content;
+    }
+    return marked.parse(content, { async: false }) as string;
+  }
+
   onPublish(): void {
     if (!this.article) return;
-    this.svc.publish(this.article.id).subscribe({ next: a => this.article = a });
+    this.svc.publish(this.article.id).subscribe({ next: a => { this.article = a; this.renderedContent = this.renderMarkdown(a.content); } });
   }
 
   onArchive(): void {
     if (!this.article) return;
-    this.svc.archive(this.article.id).subscribe({ next: a => this.article = a });
+    this.svc.archive(this.article.id).subscribe({ next: a => { this.article = a; this.renderedContent = this.renderMarkdown(a.content); } });
   }
 
   onDelete(): void {
@@ -251,13 +266,5 @@ export class ArtikelDetailComponent implements OnInit {
 
   statusLabel(s: string): string {
     return s === 'PUBLISHED' ? 'Veroeffentlicht' : s === 'DRAFT' ? 'Entwurf' : 'Archiviert';
-  }
-
-  formatContent(content: string): string {
-    // Simple formatting: convert line breaks to paragraphs
-    if (!content) return '';
-    return content
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/\n/g, '<br>');
   }
 }

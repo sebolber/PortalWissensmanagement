@@ -1,15 +1,14 @@
 package de.wissensmanagement.entity;
 
-import de.wissensmanagement.enums.PromptType;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "wm_prompt_configs")
+@Table(name = "wm_prompt_categories")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class PromptConfig {
+public class PromptCategory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -21,23 +20,8 @@ public class PromptConfig {
     @Column(nullable = false, length = 200)
     private String name;
 
-    @Column(length = 1000)
+    @Column(length = 500)
     private String description;
-
-    @Column(name = "prompt_text", nullable = false, columnDefinition = "TEXT")
-    private String promptText;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "prompt_type", nullable = false, length = 20)
-    private PromptType promptType;
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "category_id")
-    private PromptCategory category;
-
-    @Column(name = "is_active", nullable = false)
-    @Builder.Default
-    private boolean active = true;
 
     @Column(name = "sort_order", nullable = false)
     @Builder.Default

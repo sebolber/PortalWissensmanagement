@@ -32,12 +32,21 @@ public class PromptConfigController {
     }
 
     @GetMapping
-    public List<PromptDto> list(@RequestParam(required = false) PromptType type) {
+    public List<PromptDto> list(@RequestParam(required = false) PromptType type,
+                                @RequestParam(required = false) Boolean active) {
         permissionService.requireLesen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
-        List<PromptConfig> configs = type != null
-                ? promptConfigService.listByType(tenantId, type)
-                : promptConfigService.listAll(tenantId);
+        List<PromptConfig> configs;
+
+        if (Boolean.TRUE.equals(active) && type != null) {
+            configs = promptConfigService.listActiveByType(tenantId, type);
+        } else if (Boolean.TRUE.equals(active)) {
+            configs = promptConfigService.listActive(tenantId);
+        } else if (type != null) {
+            configs = promptConfigService.listByType(tenantId, type);
+        } else {
+            configs = promptConfigService.listAll(tenantId);
+        }
         return configs.stream().map(this::toDto).toList();
     }
 
@@ -52,8 +61,10 @@ public class PromptConfigController {
     public PromptDto create(@RequestBody PromptRequest request) {
         permissionService.requireSchreiben(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
-        PromptConfig config = promptConfigService.create(tenantId,
-                request.name(), request.description(), request.promptText(), request.promptType());
+        PromptConfig config = promptConfigService.createFull(tenantId,
+                request.name(), request.description(), request.promptText(), request.promptType(),
+                request.categoryId(), request.active() != null ? request.active() : true,
+                request.sortOrder() != null ? request.sortOrder() : 0);
         return toDto(config);
     }
 
@@ -61,8 +72,10 @@ public class PromptConfigController {
     public PromptDto update(@PathVariable String id, @RequestBody PromptRequest request) {
         permissionService.requireSchreiben(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
-        PromptConfig config = promptConfigService.update(tenantId, id,
-                request.name(), request.description(), request.promptText(), request.promptType());
+        PromptConfig config = promptConfigService.updateFull(tenantId, id,
+                request.name(), request.description(), request.promptText(), request.promptType(),
+                request.categoryId(), request.active() != null ? request.active() : true,
+                request.sortOrder() != null ? request.sortOrder() : 0);
         return toDto(config);
     }
 
@@ -74,10 +87,6 @@ public class PromptConfigController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Wendet einen konfigurierten Prompt auf den uebergebenen Inhalt an.
-     * Der Prompt-Text wird als System-Prompt verwendet, der Inhalt als User-Nachricht.
-     */
     @PostMapping("/{id}/anwenden")
     public ResponseEntity<Map<String, String>> applyPrompt(@PathVariable String id,
                                                              @RequestBody Map<String, String> body) {
@@ -103,14 +112,21 @@ public class PromptConfigController {
     }
 
     private PromptDto toDto(PromptConfig config) {
-        return new PromptDto(config.getId(), config.getName(), config.getDescription(),
+        return new PromptDto(
+                config.getId(), config.getName(), config.getDescription(),
                 config.getPromptText(), config.getPromptType().name(),
+                config.getCategory() != null ? config.getCategory().getId() : null,
+                config.getCategory() != null ? config.getCategory().getName() : null,
+                config.isActive(), config.getSortOrder(),
                 config.getCreatedAt() != null ? config.getCreatedAt().toString() : null,
                 config.getUpdatedAt() != null ? config.getUpdatedAt().toString() : null);
     }
 
-    record PromptRequest(String name, String description, String promptText, PromptType promptType) {}
+    record PromptRequest(String name, String description, String promptText, PromptType promptType,
+                         String categoryId, Boolean active, Integer sortOrder) {}
 
     record PromptDto(String id, String name, String description, String promptText,
-                     String promptType, String createdAt, String updatedAt) {}
+                     String promptType, String categoryId, String categoryName,
+                     boolean active, int sortOrder,
+                     String createdAt, String updatedAt) {}
 }

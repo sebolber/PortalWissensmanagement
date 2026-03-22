@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Article, ArticlePage, ArticleVersion, ArticleTreeNode, BreadcrumbItem, Category, Grouping, PromptConfig, SearchResult, StructuredResult, Tag, Statistik } from '../models/artikel.model';
+import { Article, ArticlePage, ArticleVersion, ArticleTreeNode, BreadcrumbItem, Category, Grouping, PromptConfig, PromptCategory, SearchResult, StructuredResult, Tag, Statistik } from '../models/artikel.model';
 
 @Injectable({ providedIn: 'root' })
 export class ArtikelService {
@@ -153,9 +153,10 @@ export class ArtikelService {
 
   private readonly promptBase = 'api/prompts';
 
-  listPrompts(type?: 'SUMMARY' | 'CONTENT'): Observable<PromptConfig[]> {
+  listPrompts(type?: 'SUMMARY' | 'CONTENT', active?: boolean): Observable<PromptConfig[]> {
     let p = new HttpParams();
     if (type) p = p.set('type', type);
+    if (active !== undefined) p = p.set('active', String(active));
     return this.http.get<PromptConfig[]>(this.promptBase, { params: p });
   }
 
@@ -163,12 +164,32 @@ export class ArtikelService {
     return this.http.get<PromptConfig>(`${this.promptBase}/${id}`);
   }
 
-  createPrompt(data: { name: string; description?: string; promptText: string; promptType: 'SUMMARY' | 'CONTENT' }): Observable<PromptConfig> {
+  createPrompt(data: Partial<PromptConfig>): Observable<PromptConfig> {
     return this.http.post<PromptConfig>(this.promptBase, data);
   }
 
-  updatePrompt(id: string, data: { name: string; description?: string; promptText: string; promptType: 'SUMMARY' | 'CONTENT' }): Observable<PromptConfig> {
+  updatePrompt(id: string, data: Partial<PromptConfig>): Observable<PromptConfig> {
     return this.http.put<PromptConfig>(`${this.promptBase}/${id}`, data);
+  }
+
+  // --- Prompt Categories ---
+
+  private readonly promptCatBase = 'api/prompt-kategorien';
+
+  listPromptCategories(): Observable<PromptCategory[]> {
+    return this.http.get<PromptCategory[]>(this.promptCatBase);
+  }
+
+  createPromptCategory(data: Partial<PromptCategory>): Observable<PromptCategory> {
+    return this.http.post<PromptCategory>(this.promptCatBase, data);
+  }
+
+  updatePromptCategory(id: string, data: Partial<PromptCategory>): Observable<PromptCategory> {
+    return this.http.put<PromptCategory>(`${this.promptCatBase}/${id}`, data);
+  }
+
+  deletePromptCategory(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.promptCatBase}/${id}`);
   }
 
   deletePrompt(id: string): Observable<void> {

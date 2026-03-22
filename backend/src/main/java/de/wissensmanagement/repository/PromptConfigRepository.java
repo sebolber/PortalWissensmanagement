@@ -16,4 +16,9 @@ public interface PromptConfigRepository extends JpaRepository<PromptConfig, Stri
     List<PromptConfig> findByTenantIdAndPromptTypeOrderByNameAsc(String tenantId, PromptType promptType);
 
     Optional<PromptConfig> findByIdAndTenantId(String id, String tenantId);
+
+    List<PromptConfig> findByTenantIdAndActiveOrderBySortOrderAscNameAsc(String tenantId, boolean active);
+
+    List<PromptConfig> findByTenantIdAndPromptTypeAndActiveOrderBySortOrderAscNameAsc(
+            String tenantId, PromptType promptType, boolean active);
 }
