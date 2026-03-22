@@ -2,9 +2,9 @@
 
 name: Wissensmanagement
 
-version: 3.6.0
-backendVersion: 3.6.0
-frontendVersion: 1.7.0
+version: 3.8.0
+backendVersion: 3.8.0
+frontendVersion: 1.9.0
 
 description: Wissensdatenbank mit RAG-Chat, LLM-Integration, Artikelverwaltung und Volltextsuche
 
@@ -40,6 +40,10 @@ pages:
   - label: "Kategorien"
     route: "/kategorien"
     icon: "folder"
+    useCase: "wissensmanagement-admin"
+  - label: "Konfiguration"
+    route: "/konfiguration"
+    icon: "settings"
     useCase: "wissensmanagement-admin"
 
 useCases:

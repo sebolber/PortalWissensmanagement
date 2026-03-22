@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ArtikelService } from '../../services/artikel.service';
-import { Article, Category, Grouping } from '../../models/artikel.model';
 import { ArticleTreeComponent } from '../../components/article-tree.component';
+import { Article, ArticleTreeNode, Category, Grouping } from '../../models/artikel.model';
 
 @Component({
   selector: 'app-artikel-list',
@@ -20,14 +20,15 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
             {{ treeSidebarCollapsed ? '&#9654;' : '&#9664;' }}
           </button>
         </div>
-        <div class="filter-field">
+        <app-article-tree *ngIf="!treeSidebarCollapsed"></app-article-tree>
+        <div class="filter-field" style="padding: 0.5rem;" *ngIf="!treeSidebarCollapsed">
           <label>Gruppierung</label>
           <select [(ngModel)]="selectedGrouping" (change)="load()">
             <option value="">Alle</option>
             <option *ngFor="let g of groupings" [value]="g.id">{{ g.name }}</option>
           </select>
         </div>
-        <div class="filter-field">
+        <div class="filter-field" style="padding: 0 0.5rem 0.5rem;" *ngIf="!treeSidebarCollapsed">
           <label>Status</label>
           <select [(ngModel)]="selectedStatus" (change)="load()">
             <option value="">Alle</option>
@@ -41,7 +42,13 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
       <!-- Main content -->
       <div class="list-main">
         <div class="page-header">
-          <h1>Wissensdatenbank</h1>
+          <div>
+            <h1>Wissensdatenbank</h1>
+            <div class="view-toggle">
+              <button class="toggle-btn" [class.active]="viewMode === 'hierarchy'" (click)="setViewMode('hierarchy')">Hierarchie</button>
+              <button class="toggle-btn" [class.active]="viewMode === 'flat'" (click)="setViewMode('flat')">Liste</button>
+            </div>
+          </div>
           <div class="header-actions">
             <a routerLink="/suche" class="btn btn-secondary">&#128269; Suche</a>
             <a routerLink="/artikel/neu" class="btn btn-primary">+ Neuer Artikel</a>
@@ -52,15 +59,48 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
           {{ totalElements }} Artikel gefunden
         </div>
 
-        <div class="article-list">
+        <!-- Hierarchy View -->
+        <div *ngIf="viewMode === 'hierarchy'" class="article-list">
+          <ng-container *ngFor="let node of hierarchyArticles">
+            <a [routerLink]="'/artikel/' + node.id" class="card article-card"
+               [style.marginLeft.px]="node.depth * 24"
+               [class.sub-article]="node.depth > 0">
+              <div class="article-main">
+                <div class="article-content">
+                  <div class="article-title-row">
+                    <span *ngIf="node.depth > 0" class="depth-indicator">&#8627;</span>
+                    <h3 [class.sub-title]="node.depth > 0">{{ node.title }}</h3>
+                  </div>
+                  <p>{{ node.summary || (node.content | slice:0:150) }}{{ !node.summary && (node.content || '').length > 150 ? '...' : '' }}</p>
+                </div>
+                <div class="article-badges">
+                  <span *ngIf="node.category" class="tag">{{ node.category.name }}</span>
+                  <span class="status-badge" [class]="node.status.toLowerCase()">{{ statusLabel(node.status) }}</span>
+                  <span *ngIf="node.childCount > 0" class="children-badge">{{ node.childCount }} Unter</span>
+                </div>
+              </div>
+              <div class="article-meta">
+                <span>v{{ node.version }}</span>
+                <span>{{ formatDate(node.createdAt) }}</span>
+                <span>{{ node.viewCount }} Aufrufe</span>
+                <span *ngIf="node.averageRating > 0">{{ node.averageRating.toFixed(1) }} / 5</span>
+                <span *ngFor="let t of node.tags" class="meta-tag">{{ t.name }}</span>
+              </div>
+            </a>
+          </ng-container>
+        </div>
+
+        <!-- Flat View -->
+        <div *ngIf="viewMode === 'flat'" class="article-list">
           <a *ngFor="let a of articles" [routerLink]="'/artikel/' + a.id" class="card article-card">
             <div class="article-main">
               <div class="article-content">
                 <h3>{{ a.title }}</h3>
                 <div class="article-hierarchy" *ngIf="a.breadcrumb && a.breadcrumb.length > 1">
-                  <span *ngFor="let bc of a.breadcrumb; let last = last; let first = first">
-                    <span *ngIf="!last && !first">{{ bc.title }} &rsaquo; </span>
-                  </span>
+                  <ng-container *ngFor="let bc of a.breadcrumb; let last = last; let first = first">
+                    <span *ngIf="!last && first">{{ bc.title }}</span>
+                    <span *ngIf="!last && !first"> &rsaquo; {{ bc.title }}</span>
+                  </ng-container>
                 </div>
                 <p>{{ a.summary || (a.content | slice:0:180) }}{{ !a.summary && a.content.length > 180 ? '...' : '' }}</p>
               </div>
@@ -68,7 +108,7 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
                 <span *ngIf="a.grouping" class="grouping-badge">{{ a.grouping.name }}</span>
                 <span *ngIf="a.category" class="tag">{{ a.category.name }}</span>
                 <span class="status-badge" [class]="a.status.toLowerCase()">{{ statusLabel(a.status) }}</span>
-                <span *ngIf="a.childCount > 0" class="children-badge">{{ a.childCount }} Unterartikel</span>
+                <span *ngIf="a.childCount > 0" class="children-badge">{{ a.childCount }} Unter</span>
               </div>
             </div>
             <div class="article-meta">
@@ -82,12 +122,12 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
           </a>
         </div>
 
-        <div *ngIf="articles.length === 0 && !loading" class="empty-state">
+        <div *ngIf="(viewMode === 'flat' ? articles.length : hierarchyArticles.length) === 0 && !loading" class="empty-state">
           <p>Keine Artikel gefunden.</p>
           <a routerLink="/artikel/neu" class="btn btn-primary" style="margin-top:1rem">Ersten Artikel erstellen</a>
         </div>
 
-        <div *ngIf="totalPages > 1" class="pagination">
+        <div *ngIf="viewMode === 'flat' && totalPages > 1" class="pagination">
           <button class="btn btn-secondary btn-sm" [disabled]="currentPage === 0" (click)="goToPage(currentPage - 1)">Zurueck</button>
           <span>Seite {{ currentPage + 1 }} von {{ totalPages }}</span>
           <button class="btn btn-secondary btn-sm" [disabled]="currentPage >= totalPages - 1" (click)="goToPage(currentPage + 1)">Weiter</button>
@@ -103,27 +143,32 @@ import { ArticleTreeComponent } from '../../components/article-tree.component';
     .btn-icon { border: none; background: none; cursor: pointer; font-size: 0.75rem; color: #6b7280; padding: 0.25rem 0.375rem; }
     .btn-icon:hover { color: #006EC7; }
     .list-main { flex: 1; min-width: 0; padding: 0 0 0 1rem; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+    .page-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
     .page-header h1 { font-size: 1.25rem; font-weight: 600; }
     .header-actions { display: flex; gap: 0.5rem; }
-    .filter-bar { margin-bottom: 1.5rem; }
-    .filter-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: end; }
-    .search-field { flex: 1; min-width: 200px; }
+    .view-toggle { display: flex; gap: 0; margin-top: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; overflow: hidden; }
+    .toggle-btn { padding: 0.25rem 0.75rem; border: none; background: #fff; font-size: 0.75rem; cursor: pointer; color: #6b7280; }
+    .toggle-btn:hover { background: #f3f4f6; }
+    .toggle-btn.active { background: #006EC7; color: #fff; }
     .filter-field { min-width: 140px; }
     .results-info { font-size: 0.8125rem; color: #6b7280; margin-bottom: 0.75rem; }
-    .article-list { display: flex; flex-direction: column; gap: 0.75rem; }
-    .article-card { text-decoration: none; color: inherit; transition: box-shadow 0.15s; cursor: pointer; }
+    .article-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .article-card { text-decoration: none; color: inherit; transition: box-shadow 0.15s, border-left-color 0.15s; cursor: pointer; }
     .article-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    .article-card.sub-article { border-left: 3px solid #bfdbfe; background: #fafbfc; }
+    .article-card.sub-article:hover { border-left-color: #006EC7; }
+    .article-title-row { display: flex; align-items: center; gap: 0.375rem; }
+    .depth-indicator { color: #9ca3af; font-size: 1rem; flex-shrink: 0; }
     .article-card h3 { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.125rem; }
+    .article-card h3.sub-title { font-size: 0.875rem; font-weight: 500; }
     .article-hierarchy { font-size: 0.6875rem; color: #9ca3af; margin-bottom: 0.25rem; }
     .article-card p { font-size: 0.8125rem; color: #6b7280; line-height: 1.5; }
     .article-main { display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
-    .article-content { flex: 1; }
+    .article-content { flex: 1; min-width: 0; }
     .article-badges { display: flex; flex-direction: column; gap: 0.375rem; align-items: flex-end; flex-shrink: 0; }
     .article-meta { display: flex; gap: 0.75rem; font-size: 0.75rem; color: #9ca3af; margin-top: 0.5rem; align-items: center; flex-wrap: wrap; }
     .meta-tag { padding: 0.1rem 0.4rem; background: #f3f4f6; border-radius: 0.25rem; font-size: 0.6875rem; }
     .tag { padding: 0.2rem 0.6rem; background: #dbeafe; color: #1e40af; font-size: 0.6875rem; font-weight: 500; border-radius: 1rem; white-space: nowrap; }
-    .grouping-badge { padding: 0.2rem 0.6rem; background: #fef3c7; color: #92400e; font-size: 0.6875rem; font-weight: 500; border-radius: 1rem; white-space: nowrap; }
     .status-badge { padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; }
     .status-badge.published { background: #dcfce7; color: #166534; }
     .status-badge.draft { background: #fef3c7; color: #92400e; }
@@ -140,6 +185,7 @@ export class ArtikelListComponent implements OnInit {
   private svc = inject(ArtikelService);
 
   articles: Article[] = [];
+  hierarchyArticles: Article[] = [];
   categories: Category[] = [];
   groupings: Grouping[] = [];
   searchQuery = '';
@@ -151,11 +197,51 @@ export class ArtikelListComponent implements OnInit {
   totalPages = 0;
   currentPage = 0;
   treeSidebarCollapsed = false;
+  viewMode: 'hierarchy' | 'flat' = 'hierarchy';
 
   ngOnInit(): void {
     this.load();
+    this.loadHierarchy();
     this.svc.listCategories().subscribe({ next: c => this.categories = c });
     this.svc.listGroupings().subscribe({ next: g => this.groupings = g });
+  }
+
+  setViewMode(mode: 'hierarchy' | 'flat'): void {
+    this.viewMode = mode;
+    if (mode === 'hierarchy' && this.hierarchyArticles.length === 0) {
+      this.loadHierarchy();
+    }
+  }
+
+  loadHierarchy(): void {
+    this.svc.getTree().subscribe({
+      next: tree => {
+        this.hierarchyArticles = [];
+        this.flattenTreeToArticles(tree, 0);
+      }
+    });
+  }
+
+  private flattenTreeToArticles(nodes: ArticleTreeNode[], depth: number): void {
+    for (const node of nodes) {
+      // Load full article data for each node
+      this.svc.getById(node.id, false).subscribe({
+        next: article => {
+          article.depth = depth;
+          // Insert at correct position (maintain order)
+          const idx = this.findInsertIndex(node.id, nodes, depth);
+          this.hierarchyArticles.splice(idx, 0, article);
+        }
+      });
+      if (node.children && node.children.length > 0) {
+        this.flattenTreeToArticles(node.children, depth + 1);
+      }
+    }
+  }
+
+  private findInsertIndex(nodeId: string, siblings: ArticleTreeNode[], depth: number): number {
+    // Simple append - articles load async so we just push
+    return this.hierarchyArticles.length;
   }
 
   load(): void {
