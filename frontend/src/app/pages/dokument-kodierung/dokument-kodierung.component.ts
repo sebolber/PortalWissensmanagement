@@ -76,8 +76,7 @@ import { DocumentSuggestion, LlmModelConfig } from '../../models/artikel.model';
           <div class="doc-actions">
             <button class="btn btn-primary btn-sm"
                     *ngIf="doc.status === 'PENDING'"
-                    (click)="startSuggestion(doc)"
-                    [disabled]="doc.status === 'PROCESSING'">
+                    (click)="startSuggestion(doc)">
               Kodierung starten
             </button>
             <button class="btn btn-primary btn-sm"
