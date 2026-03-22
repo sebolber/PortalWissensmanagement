@@ -1,10 +1,11 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ArtikelService } from '../../services/artikel.service';
 import { Article, ArticleVersion } from '../../models/artikel.model';
 import { marked } from 'marked';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-artikel-detail',
@@ -26,6 +27,14 @@ import { marked } from 'marked';
     <div *ngIf="article" class="article-layout">
       <!-- Main article content -->
       <div class="article-main">
+        <!-- Uebergeordneter Artikel (prominent ueber dem Unterartikel) -->
+        <div *ngIf="parentArticle" class="parent-article-banner card">
+          <span class="parent-banner-label">Uebergeordneter Artikel:</span>
+          <a [routerLink]="'/artikel/' + parentArticle.id" class="parent-banner-link">
+            &larr; {{ parentArticle.title }}
+          </a>
+        </div>
+
         <div class="card">
           <div class="detail-header">
             <div>
@@ -139,6 +148,10 @@ import { marked } from 'marked';
     .article-layout { display: grid; grid-template-columns: 1fr 240px; gap: 1rem; align-items: start; }
     @media (max-width: 900px) { .article-layout { grid-template-columns: 1fr; } .article-sidebar { order: -1; } }
     .article-main { min-width: 0; }
+    .parent-article-banner { display: flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1rem; margin-bottom: 0.75rem; background: #f0f9ff; border-left: 3px solid #006EC7; }
+    .parent-banner-label { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; white-space: nowrap; }
+    .parent-banner-link { font-size: 0.9375rem; color: #006EC7; text-decoration: none; font-weight: 600; }
+    .parent-banner-link:hover { text-decoration: underline; }
     .detail-header { display: flex; justify-content: space-between; align-items: start; gap: 1rem; margin-bottom: 1rem; }
     .detail-header h1 { font-size: 1.375rem; font-weight: 600; margin-bottom: 0.375rem; }
     .meta-row { display: flex; gap: 0.75rem; font-size: 0.8125rem; color: #6b7280; align-items: center; flex-wrap: wrap; }
@@ -188,10 +201,11 @@ import { marked } from 'marked';
     .empty-state { text-align: center; padding: 3rem; color: #9ca3af; }
   `]
 })
-export class ArtikelDetailComponent implements OnInit {
+export class ArtikelDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private svc = inject(ArtikelService);
+  private routeSub?: Subscription;
 
   article: Article | null = null;
   parentArticle: Article | null = null;
@@ -202,10 +216,27 @@ export class ArtikelDetailComponent implements OnInit {
   renderedContent = '';
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.loadArticle(id);
-    }
+    this.routeSub = this.route.paramMap.subscribe(params => {
+      const id = params.get('id');
+      if (id) {
+        this.resetState();
+        this.loadArticle(id);
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.routeSub?.unsubscribe();
+  }
+
+  private resetState(): void {
+    this.article = null;
+    this.parentArticle = null;
+    this.childArticles = [];
+    this.versions = [];
+    this.loading = true;
+    this.userRating = 0;
+    this.renderedContent = '';
   }
 
   private loadArticle(id: string): void {
