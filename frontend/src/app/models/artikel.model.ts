@@ -169,6 +169,31 @@ export interface PromptCategory {
   sortOrder: number;
 }
 
+// --- Dokument-Kodierempfehlung ---
+
+export interface DocumentSuggestion {
+  id: number;
+  fileName: string;
+  fileContentType: string | null;
+  status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'ERROR';
+  errorMessage: string | null;
+  empfehlungen: string[];
+  llmModel: string | null;
+  tokenCount: number;
+  quellen: UsedSource[];
+  auditLogId: number | null;
+  modelConfigId: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface UsedSource {
+  id: number;
+  title: string;
+  bindingLevel: string;
+  matchReason: string;
+}
+
 export interface ChatRequest {
   sessionId?: string;
   question: string;
