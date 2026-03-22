@@ -225,6 +225,51 @@ public class ArticleController {
         return ResponseEntity.ok(Map.of("summary", response.content()));
     }
 
+    // --- Hierarchie / Baum ---
+
+    @GetMapping("/baum")
+    public List<HierarchyService.ArticleTreeNode> getTree() {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        return hierarchyService.getArticleTree(tenantId);
+    }
+
+    @GetMapping("/{id}/kinder")
+    public List<ArticleDto> getChildren(@PathVariable String id) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        return hierarchyService.getChildren(tenantId, id).stream()
+                .map(a -> articleService.getArticle(tenantId, a.getId()))
+                .toList();
+    }
+
+    @GetMapping("/{id}/breadcrumb")
+    public List<ArticleDto.BreadcrumbItem> getBreadcrumb(@PathVariable String id) {
+        permissionService.requireLesen(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        return hierarchyService.getBreadcrumb(tenantId, id);
+    }
+
+    @PutMapping("/{id}/verschieben")
+    public ResponseEntity<Void> moveArticle(@PathVariable String id,
+                                             @RequestBody Map<String, String> body) {
+        permissionService.requireSchreiben(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        hierarchyService.moveArticle(tenantId, id, body.get("newParentId"));
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/sortierung")
+    public ResponseEntity<Void> reorderArticles(@RequestBody Map<String, Object> body) {
+        permissionService.requireSchreiben(securityHelper.getCurrentToken());
+        String tenantId = securityHelper.getCurrentTenantId();
+        String parentArticleId = (String) body.get("parentArticleId");
+        @SuppressWarnings("unchecked")
+        List<String> orderedIds = (List<String>) body.get("orderedIds");
+        hierarchyService.reorderArticles(tenantId, parentArticleId, orderedIds);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/suche")
     public List<SearchService.SearchResult> search(
             @RequestParam String q,
