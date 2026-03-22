@@ -50,6 +50,21 @@ import { Article, ArticleTreeNode, Category, Grouping } from '../../models/artik
             </div>
           </div>
           <div class="header-actions">
+            <div class="sort-controls">
+              <label class="sort-label">Sortierung:</label>
+              <select [(ngModel)]="sortOption" (change)="onSortChange()" class="sort-select">
+                <option value="createdAt_DESC">Datum (neueste zuerst)</option>
+                <option value="createdAt_ASC">Datum (aelteste zuerst)</option>
+                <option value="title_ASC">Titel (A-Z)</option>
+                <option value="title_DESC">Titel (Z-A)</option>
+                <option value="category_ASC">Kategorie</option>
+                <option value="content_ASC">Text (A-Z)</option>
+              </select>
+            </div>
+            <button *ngIf="viewMode === 'hierarchy'" class="btn btn-secondary btn-sm"
+                    (click)="toggleSubArticles()">
+              {{ showSubArticles ? 'Nur Hauptartikel' : 'Alle Artikel anzeigen' }}
+            </button>
             <a routerLink="/suche" class="btn btn-secondary">&#128269; Suche</a>
             <a routerLink="/artikel/neu" class="btn btn-primary">+ Neuer Artikel</a>
           </div>
@@ -61,7 +76,7 @@ import { Article, ArticleTreeNode, Category, Grouping } from '../../models/artik
 
         <!-- Hierarchy View -->
         <div *ngIf="viewMode === 'hierarchy'" class="article-list">
-          <ng-container *ngFor="let node of hierarchyArticles">
+          <ng-container *ngFor="let node of filteredHierarchyArticles">
             <a [routerLink]="'/artikel/' + node.id" class="card article-card"
                [style.marginLeft.px]="node.depth * 24"
                [class.sub-article]="node.depth > 0">
@@ -75,6 +90,7 @@ import { Article, ArticleTreeNode, Category, Grouping } from '../../models/artik
                 </div>
                 <div class="article-badges">
                   <span *ngIf="node.category" class="tag">{{ node.category.name }}</span>
+                  <span *ngIf="node.grouping" class="grouping-badge">{{ node.grouping.name }}</span>
                   <span class="status-badge" [class]="node.status.toLowerCase()">{{ statusLabel(node.status) }}</span>
                   <span *ngIf="node.childCount > 0" class="children-badge">{{ node.childCount }} Unter</span>
                 </div>
@@ -145,7 +161,11 @@ import { Article, ArticleTreeNode, Category, Grouping } from '../../models/artik
     .list-main { flex: 1; min-width: 0; padding: 0 0 0 1rem; }
     .page-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
     .page-header h1 { font-size: 1.25rem; font-weight: 600; }
-    .header-actions { display: flex; gap: 0.5rem; }
+    .header-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .sort-controls { display: flex; align-items: center; gap: 0.375rem; }
+    .sort-label { font-size: 0.75rem; color: #6b7280; white-space: nowrap; }
+    .sort-select { font-size: 0.8125rem; padding: 0.3rem 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; background: #fff; color: #374151; cursor: pointer; }
+    .sort-select:focus { outline: none; border-color: #006EC7; }
     .view-toggle { display: flex; gap: 0; margin-top: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; overflow: hidden; }
     .toggle-btn { padding: 0.25rem 0.75rem; border: none; background: #fff; font-size: 0.75rem; cursor: pointer; color: #6b7280; }
     .toggle-btn:hover { background: #f3f4f6; }
@@ -174,6 +194,7 @@ import { Article, ArticleTreeNode, Category, Grouping } from '../../models/artik
     .status-badge.draft { background: #fef3c7; color: #92400e; }
     .status-badge.archived { background: #f3f4f6; color: #6b7280; }
     .children-badge { padding: 0.15rem 0.5rem; background: #f0f9ff; color: #0369a1; font-size: 0.6875rem; border-radius: 0.25rem; }
+    .grouping-badge { padding: 0.15rem 0.5rem; background: #fef3c7; color: #92400e; font-size: 0.6875rem; font-weight: 500; border-radius: 1rem; white-space: nowrap; }
     .depth-info { padding: 0.1rem 0.4rem; background: #f0f9ff; color: #0369a1; font-size: 0.625rem; border-radius: 0.25rem; }
     .empty-state { text-align: center; padding: 3rem; color: #9ca3af; }
     .pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.5rem; font-size: 0.875rem; }
@@ -198,6 +219,15 @@ export class ArtikelListComponent implements OnInit {
   currentPage = 0;
   treeSidebarCollapsed = false;
   viewMode: 'hierarchy' | 'flat' = 'hierarchy';
+  showSubArticles = true;
+  sortOption = 'createdAt_DESC';
+
+  get filteredHierarchyArticles(): Article[] {
+    if (this.showSubArticles) {
+      return this.sortArticles(this.hierarchyArticles);
+    }
+    return this.sortArticles(this.hierarchyArticles.filter(a => a.depth === 0));
+  }
 
   ngOnInit(): void {
     this.load();
@@ -213,6 +243,19 @@ export class ArtikelListComponent implements OnInit {
     }
   }
 
+  toggleSubArticles(): void {
+    this.showSubArticles = !this.showSubArticles;
+  }
+
+  onSortChange(): void {
+    if (this.viewMode === 'flat') {
+      const [sortBy, sortDir] = this.sortOption.split('_');
+      this.currentPage = 0;
+      this.load(sortBy, sortDir);
+    }
+    // Hierarchy-View wird ueber getter filteredHierarchyArticles automatisch sortiert
+  }
+
   loadHierarchy(): void {
     this.svc.getTree().subscribe({
       next: tree => {
@@ -224,11 +267,9 @@ export class ArtikelListComponent implements OnInit {
 
   private flattenTreeToArticles(nodes: ArticleTreeNode[], depth: number): void {
     for (const node of nodes) {
-      // Load full article data for each node
       this.svc.getById(node.id, false).subscribe({
         next: article => {
           article.depth = depth;
-          // Insert at correct position (maintain order)
           const idx = this.findInsertIndex(node.id, nodes, depth);
           this.hierarchyArticles.splice(idx, 0, article);
         }
@@ -240,12 +281,48 @@ export class ArtikelListComponent implements OnInit {
   }
 
   private findInsertIndex(nodeId: string, siblings: ArticleTreeNode[], depth: number): number {
-    // Simple append - articles load async so we just push
     return this.hierarchyArticles.length;
   }
 
-  load(): void {
+  private sortArticles(articles: Article[]): Article[] {
+    if (!this.showSubArticles) {
+      // Nur Hauptartikel: einfach sortieren
+      return [...articles].sort((a, b) => this.compareArticles(a, b));
+    }
+    // Mit Unterartikeln: Hauptartikel sortieren, Unterartikel unter ihrem Parent halten
+    const roots = articles.filter(a => a.depth === 0);
+    const sortedRoots = [...roots].sort((a, b) => this.compareArticles(a, b));
+    const result: Article[] = [];
+    for (const root of sortedRoots) {
+      result.push(root);
+      // Alle Unterartikel dieses Roots (depth > 0 die nach diesem Root kommen)
+      const children = articles.filter(a => a.depth > 0 && a.treePath?.startsWith(root.treePath || `/${root.id}/`));
+      const sortedChildren = [...children].sort((a, b) => this.compareArticles(a, b));
+      result.push(...sortedChildren);
+    }
+    return result;
+  }
+
+  private compareArticles(a: Article, b: Article): number {
+    const [field, dir] = this.sortOption.split('_');
+    const asc = dir === 'ASC' ? 1 : -1;
+    switch (field) {
+      case 'title':
+        return asc * (a.title || '').localeCompare(b.title || '', 'de');
+      case 'createdAt':
+        return asc * ((a.createdAt || '').localeCompare(b.createdAt || ''));
+      case 'category':
+        return asc * ((a.category?.name || 'zzz').localeCompare(b.category?.name || 'zzz', 'de'));
+      case 'content':
+        return asc * ((a.content || '').localeCompare(b.content || '', 'de'));
+      default:
+        return 0;
+    }
+  }
+
+  load(sortBy?: string, sortDir?: string): void {
     this.loading = true;
+    const [defaultSort, defaultDir] = this.sortOption.split('_');
     this.svc.list({
       status: this.selectedStatus || undefined,
       q: this.searchQuery || undefined,
@@ -253,6 +330,8 @@ export class ArtikelListComponent implements OnInit {
       groupingId: this.selectedGrouping || undefined,
       page: this.currentPage,
       size: 20,
+      sortBy: sortBy || defaultSort,
+      sortDir: sortDir || defaultDir,
     }).subscribe({
       next: page => {
         this.articles = page.content;
