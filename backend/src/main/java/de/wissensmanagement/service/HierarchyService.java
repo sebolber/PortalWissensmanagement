@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class HierarchyService {
 
     private final KnowledgeArticleRepository articleRepo;

@@ -256,7 +256,7 @@ export class ArtikelDetailComponent implements OnInit, OnDestroy {
           });
         }
       },
-      error: () => this.loading = false,
+      error: (err) => { console.error('Failed to load article detail:', err); this.loading = false; },
     });
     this.svc.getVersions(id).subscribe({ next: v => this.versions = v });
   }

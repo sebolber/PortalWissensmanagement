@@ -3,6 +3,7 @@ package de.wissensmanagement.service;
 import de.wissensmanagement.entity.KnowledgeArticle;
 import de.wissensmanagement.repository.KnowledgeArticleRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -14,6 +15,7 @@ import java.util.*;
  * - HYBRID: Combines both, boosting articles found by multiple strategies
  */
 @Service
+@Transactional(readOnly = true)
 public class SearchService {
 
     private final KnowledgeArticleRepository articleRepo;

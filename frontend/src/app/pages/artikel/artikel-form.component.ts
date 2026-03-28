@@ -372,12 +372,12 @@ export class ArtikelFormComponent implements OnInit, OnDestroy {
       data.changeNote = this.changeNote;
       this.svc.update(this.editId, data).subscribe({
         next: a => this.router.navigate(['/artikel', a.id]),
-        error: () => this.saving = false,
+        error: (err) => { console.error('Failed to update article:', err); this.saving = false; },
       });
     } else {
       this.svc.create(data).subscribe({
         next: a => this.router.navigate(['/artikel', a.id]),
-        error: () => this.saving = false,
+        error: (err) => { console.error('Failed to create article:', err); this.saving = false; },
       });
     }
   }

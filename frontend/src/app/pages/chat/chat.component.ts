@@ -192,7 +192,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
     this.loadSessions();
     this.chatSvc.listLlmModels().subscribe({
       next: models => this.llmModels = models,
-      error: () => {}
+      error: (err) => console.error('Failed to load LLM models:', err)
     });
   }
 
@@ -206,7 +206,7 @@ export class ChatComponent implements OnInit, AfterViewChecked {
   loadSessions(): void {
     this.chatSvc.listSessions().subscribe({
       next: s => this.sessions = s,
-      error: () => {}
+      error: (err) => console.error('Failed to load chat sessions:', err)
     });
   }
 

@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
  * search relevance and context attribution.
  */
 @Service
+@Transactional(readOnly = true)
 public class ChunkService {
 
     private static final int MAX_CHUNK_CHARS = 1500;
