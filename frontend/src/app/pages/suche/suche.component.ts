@@ -150,7 +150,8 @@ export class SucheComponent {
         this.searching = false;
         this.searched = true;
       },
-      error: () => {
+      error: (err) => {
+        console.error('Search request failed:', err);
         this.searching = false;
         this.searched = true;
       },

@@ -370,7 +370,7 @@ export class KonfigurationComponent implements OnInit {
         this.editingPrompt = null;
         this.loadPrompts();
       },
-      error: () => this.saving = false
+      error: (err) => { console.error('Failed to save prompt configuration:', err); this.saving = false; }
     });
   }
 
@@ -444,7 +444,8 @@ export class KonfigurationComponent implements OnInit {
         URL.revokeObjectURL(url);
         this.exporting = false;
       },
-      error: () => {
+      error: (err) => {
+        console.error('Failed to export data:', err);
         this.exporting = false;
         alert('Export fehlgeschlagen.');
       }

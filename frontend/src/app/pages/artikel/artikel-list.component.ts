@@ -339,7 +339,7 @@ export class ArtikelListComponent implements OnInit {
         this.totalPages = page.totalPages;
         this.loading = false;
       },
-      error: () => this.loading = false,
+      error: (err) => { console.error('Failed to load articles:', err); this.loading = false; },
     });
   }
 

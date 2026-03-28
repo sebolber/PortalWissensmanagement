@@ -108,7 +108,7 @@ export class ArticleTreeComponent implements OnInit {
         this.filteredTree = this.tree;
         this.loading = false;
       },
-      error: () => this.loading = false,
+      error: (err) => { console.error('Failed to load article tree:', err); this.loading = false; },
     });
   }
 

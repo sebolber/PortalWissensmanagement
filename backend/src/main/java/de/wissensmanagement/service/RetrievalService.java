@@ -7,6 +7,7 @@ import de.wissensmanagement.repository.KnowledgeChunkRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
  * Each step adds results incrementally, deduplicating by article ID.
  */
 @Service
+@Transactional(readOnly = true)
 public class RetrievalService {
 
     private static final Logger log = LoggerFactory.getLogger(RetrievalService.class);
@@ -37,6 +39,7 @@ public class RetrievalService {
         this.articleRepo = articleRepo;
     }
 
+    @Transactional
     public RetrievalResult retrieve(String tenantId, String query) {
         List<RetrievalTrace> traces = new ArrayList<>();
         Map<String, KnowledgeChunk> candidateChunks = new LinkedHashMap<>();

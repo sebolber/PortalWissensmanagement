@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class ExportImportService {
 
     private static final Logger log = LoggerFactory.getLogger(ExportImportService.class);
@@ -49,7 +50,6 @@ public class ExportImportService {
         this.chatMessageRepo = chatMessageRepo;
     }
 
-    @Transactional(readOnly = true)
     public ExportData exportAll(String tenantId) {
         ExportData data = new ExportData();
         data.exportedAt = LocalDateTime.now().toString();

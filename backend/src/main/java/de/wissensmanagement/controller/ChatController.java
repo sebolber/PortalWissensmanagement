@@ -9,6 +9,8 @@ import de.wissensmanagement.service.PermissionService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestClient;
 
@@ -18,6 +20,8 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
+
+    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
 
     private final ChatService chatService;
     private final SecurityHelper securityHelper;
@@ -139,6 +143,7 @@ public class ChatController {
                     .toList();
             return ResponseEntity.ok(result);
         } catch (Exception e) {
+            log.warn("Failed to fetch LLM models from PortalCore: {}", e.getMessage());
             return ResponseEntity.ok(List.of());
         }
     }
