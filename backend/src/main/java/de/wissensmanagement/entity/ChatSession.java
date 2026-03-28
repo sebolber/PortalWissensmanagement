@@ -32,6 +32,9 @@ public class ChatSession {
     @Column(name = "context_ref_id")
     private String contextRefId;
 
+    @Column(name = "organization_unit_id")
+    private String organizationUnitId;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
