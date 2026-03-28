@@ -28,6 +28,9 @@ public class KnowledgeCategory {
     @Column(name = "parent_id")
     private String parentId;
 
+    @Column(name = "organization_unit_id")
+    private String organizationUnitId;
+
     @Column(name = "order_index")
     @Builder.Default
     private int orderIndex = 0;

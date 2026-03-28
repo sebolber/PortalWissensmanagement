@@ -98,6 +98,9 @@ public class KnowledgeArticle {
     @Builder.Default
     private boolean publicWithinTenant = true;
 
+    @Column(name = "organization_unit_id")
+    private String organizationUnitId;
+
     @Column(name = "linked_task_id")
     private String linkedTaskId;
 
