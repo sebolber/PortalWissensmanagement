@@ -1,20 +1,33 @@
 package de.wissensmanagement.service;
 
-import de.wissensmanagement.dto.*;
-import de.wissensmanagement.entity.*;
+import de.wissensmanagement.dto.ArticleCreateRequest;
+import de.wissensmanagement.dto.ArticleDto;
+import de.wissensmanagement.dto.ArticleUpdateRequest;
+import de.wissensmanagement.dto.ArticleVersionDto;
+import de.wissensmanagement.dto.CategoryDto;
+import de.wissensmanagement.dto.GroupingDto;
+import de.wissensmanagement.dto.StatistikDto;
+import de.wissensmanagement.dto.TagDto;
+import de.wissensmanagement.entity.ArticleVersion;
+import de.wissensmanagement.entity.KnowledgeArticle;
+import de.wissensmanagement.entity.KnowledgeTag;
 import de.wissensmanagement.enums.ArticleStatus;
-import de.wissensmanagement.repository.*;
+import de.wissensmanagement.repository.ArticleVersionRepository;
+import de.wissensmanagement.repository.KnowledgeArticleRepository;
+import de.wissensmanagement.repository.KnowledgeCategoryRepository;
 import de.wissensmanagement.repository.KnowledgeGroupingRepository;
+import de.wissensmanagement.repository.KnowledgeTagRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service

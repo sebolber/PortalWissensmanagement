@@ -288,7 +288,9 @@ export class ArtikelDetailComponent implements OnInit, OnDestroy {
   rate(stars: number): void {
     if (!this.article) return;
     this.userRating = stars;
-    this.svc.submitFeedback(this.article.id, stars).subscribe();
+    this.svc.submitFeedback(this.article.id, stars).subscribe({
+      error: (err) => console.error('Fehler beim Senden des Feedbacks:', err)
+    });
   }
 
   formatDate(d: string): string {

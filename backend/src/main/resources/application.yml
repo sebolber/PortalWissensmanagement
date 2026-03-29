@@ -5,7 +5,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://portal-db:5432/portal}
     username: ${DB_USER:portal}
-    password: ${DB_PASS:portal}
+    password: ${DB_PASS}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -26,7 +26,7 @@ spring:
 
 portal:
   jwt:
-    secret: ${JWT_SECRET:ThisIsADevelopmentSecretKeyThatMustBeAtLeast32BytesLong!}
+    secret: ${JWT_SECRET}
   core:
     base-url: ${PORTAL_CORE_BASE_URL:http://portal-backend:8080}
 
