@@ -5,7 +5,10 @@ import de.wissensmanagement.repository.KnowledgeArticleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Unified search service combining fulltext and similarity-based search.

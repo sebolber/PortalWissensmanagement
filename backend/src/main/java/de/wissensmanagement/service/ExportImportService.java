@@ -1,17 +1,35 @@
 package de.wissensmanagement.service;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import de.wissensmanagement.entity.*;
+import de.wissensmanagement.entity.ArticleVersion;
+import de.wissensmanagement.entity.KnowledgeArticle;
+import de.wissensmanagement.entity.KnowledgeCategory;
+import de.wissensmanagement.entity.KnowledgeGrouping;
+import de.wissensmanagement.entity.KnowledgeTag;
+import de.wissensmanagement.entity.PromptConfig;
 import de.wissensmanagement.enums.ArticleStatus;
 import de.wissensmanagement.enums.PromptType;
-import de.wissensmanagement.repository.*;
+import de.wissensmanagement.repository.ArticleVersionRepository;
+import de.wissensmanagement.repository.ChatMessageRepository;
+import de.wissensmanagement.repository.ChatSessionRepository;
+import de.wissensmanagement.repository.KnowledgeArticleRepository;
+import de.wissensmanagement.repository.KnowledgeCategoryRepository;
+import de.wissensmanagement.repository.KnowledgeFeedbackRepository;
+import de.wissensmanagement.repository.KnowledgeGroupingRepository;
+import de.wissensmanagement.repository.KnowledgeTagRepository;
+import de.wissensmanagement.repository.PromptConfigRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
