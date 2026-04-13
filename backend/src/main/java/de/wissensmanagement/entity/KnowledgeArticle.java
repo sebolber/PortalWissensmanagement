@@ -1,6 +1,7 @@
 package de.wissensmanagement.entity;
 
 import de.wissensmanagement.enums.ArticleStatus;
+import de.wissensmanagement.enums.ArticleType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,6 +36,24 @@ public class KnowledgeArticle {
     @Column(nullable = false, length = 20)
     @Builder.Default
     private ArticleStatus status = ArticleStatus.DRAFT;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "article_type", nullable = false, length = 20)
+    @Builder.Default
+    private ArticleType articleType = ArticleType.STANDARD;
+
+    // --- Product metadata (only relevant when articleType = PRODUCT) ---
+    @Column(name = "product_version", length = 50)
+    private String productVersion;
+
+    @Column(name = "product_vendor", length = 200)
+    private String productVendor;
+
+    @Column(name = "product_icon_url", length = 500)
+    private String productIconUrl;
+
+    @Column(name = "product_documentation_url", length = 500)
+    private String productDocumentationUrl;
 
     // --- Hierarchy fields ---
     @Column(name = "parent_article_id")

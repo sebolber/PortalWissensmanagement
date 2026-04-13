@@ -8,6 +8,7 @@ import de.wissensmanagement.entity.KnowledgeGrouping;
 import de.wissensmanagement.entity.KnowledgeTag;
 import de.wissensmanagement.entity.PromptConfig;
 import de.wissensmanagement.enums.ArticleStatus;
+import de.wissensmanagement.enums.ArticleType;
 import de.wissensmanagement.enums.PromptType;
 import de.wissensmanagement.repository.ArticleVersionRepository;
 import de.wissensmanagement.repository.ChatMessageRepository;
@@ -129,6 +130,11 @@ public class ExportImportService {
             ae.content = a.getContent();
             ae.summary = a.getSummary();
             ae.status = a.getStatus().name();
+            ae.articleType = a.getArticleType() != null ? a.getArticleType().name() : "STANDARD";
+            ae.productVersion = a.getProductVersion();
+            ae.productVendor = a.getProductVendor();
+            ae.productIconUrl = a.getProductIconUrl();
+            ae.productDocumentationUrl = a.getProductDocumentationUrl();
             ae.parentArticleId = a.getParentArticleId();
             ae.sortOrder = a.getSortOrder();
             ae.treePath = a.getTreePath();
@@ -269,6 +275,13 @@ public class ExportImportService {
                 article.setContent(ae.content);
                 article.setSummary(ae.summary);
                 article.setStatus(ArticleStatus.valueOf(ae.status));
+                if (ae.articleType != null) {
+                    article.setArticleType(ArticleType.valueOf(ae.articleType));
+                }
+                article.setProductVersion(ae.productVersion);
+                article.setProductVendor(ae.productVendor);
+                article.setProductIconUrl(ae.productIconUrl);
+                article.setProductDocumentationUrl(ae.productDocumentationUrl);
                 article.setSortOrder(ae.sortOrder);
                 article.setDepth(ae.depth);
                 article.setVersion(ae.version);
@@ -394,6 +407,11 @@ public class ExportImportService {
         public String content;
         public String summary;
         public String status;
+        public String articleType;
+        public String productVersion;
+        public String productVendor;
+        public String productIconUrl;
+        public String productDocumentationUrl;
         public String parentArticleId;
         public int sortOrder;
         public String treePath;

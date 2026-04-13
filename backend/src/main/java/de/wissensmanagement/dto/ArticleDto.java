@@ -1,6 +1,7 @@
 package de.wissensmanagement.dto;
 
 import de.wissensmanagement.enums.ArticleStatus;
+import de.wissensmanagement.enums.ArticleType;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,13 @@ public class ArticleDto {
     private String content;
     private String summary;
     private ArticleStatus status;
+    private ArticleType articleType;
+
+    // Product metadata
+    private String productVersion;
+    private String productVendor;
+    private String productIconUrl;
+    private String productDocumentationUrl;
 
     // Hierarchy
     private String parentArticleId;

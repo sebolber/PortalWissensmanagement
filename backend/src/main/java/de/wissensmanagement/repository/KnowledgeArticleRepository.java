@@ -2,6 +2,7 @@ package de.wissensmanagement.repository;
 
 import de.wissensmanagement.entity.KnowledgeArticle;
 import de.wissensmanagement.enums.ArticleStatus;
+import de.wissensmanagement.enums.ArticleType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -77,6 +78,14 @@ public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArtic
            "                  similarity(a.content, :query)) DESC " +
            "LIMIT :limit", nativeQuery = true)
     List<KnowledgeArticle> similaritySearch(String tenantId, String query, int limit);
+
+    // --- Article type queries ---
+
+    List<KnowledgeArticle> findByTenantIdAndArticleType(String tenantId, ArticleType articleType);
+
+    Page<KnowledgeArticle> findByTenantIdAndArticleType(String tenantId, ArticleType articleType, Pageable pageable);
+
+    Page<KnowledgeArticle> findByTenantIdAndStatusAndArticleType(String tenantId, ArticleStatus status, ArticleType articleType, Pageable pageable);
 
     // --- Hierarchy queries ---
 

@@ -1,5 +1,6 @@
 package de.wissensmanagement.dto;
 
+import de.wissensmanagement.enums.ArticleType;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -20,4 +21,9 @@ public class ArticleUpdateRequest {
     private boolean publicWithinTenant = true;
     private String linkedTaskId;
     private String changeNote;
+    private ArticleType articleType;
+    private String productVersion;
+    private String productVendor;
+    private String productIconUrl;
+    private String productDocumentationUrl;
 }

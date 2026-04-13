@@ -12,6 +12,7 @@ import de.wissensmanagement.entity.ArticleVersion;
 import de.wissensmanagement.entity.KnowledgeArticle;
 import de.wissensmanagement.entity.KnowledgeTag;
 import de.wissensmanagement.enums.ArticleStatus;
+import de.wissensmanagement.enums.ArticleType;
 import de.wissensmanagement.repository.ArticleVersionRepository;
 import de.wissensmanagement.repository.KnowledgeArticleRepository;
 import de.wissensmanagement.repository.KnowledgeCategoryRepository;
@@ -59,12 +60,17 @@ public class ArticleService {
     }
 
     public Page<ArticleDto> listArticles(String tenantId, ArticleStatus status, String search,
-                                          String categoryId, String groupingId, Pageable pageable) {
+                                          String categoryId, String groupingId, ArticleType articleType,
+                                          Pageable pageable) {
         Page<KnowledgeArticle> page;
 
         if (search != null && !search.isBlank()) {
             ArticleStatus searchStatus = status != null ? status : ArticleStatus.PUBLISHED;
             page = articleRepo.searchByTenant(tenantId, searchStatus, search, pageable);
+        } else if (status != null && articleType != null) {
+            page = articleRepo.findByTenantIdAndStatusAndArticleType(tenantId, status, articleType, pageable);
+        } else if (articleType != null) {
+            page = articleRepo.findByTenantIdAndArticleType(tenantId, articleType, pageable);
         } else if (status != null) {
             page = articleRepo.findByTenantIdAndStatus(tenantId, status, pageable);
         } else {
@@ -103,6 +109,11 @@ public class ArticleService {
                 .content(req.getContent())
                 .summary(req.getSummary())
                 .status(ArticleStatus.DRAFT)
+                .articleType(req.getArticleType() != null ? req.getArticleType() : ArticleType.STANDARD)
+                .productVersion(req.getProductVersion())
+                .productVendor(req.getProductVendor())
+                .productIconUrl(req.getProductIconUrl())
+                .productDocumentationUrl(req.getProductDocumentationUrl())
                 .createdBy(userId)
                 .publicWithinTenant(req.isPublicWithinTenant())
                 .linkedTaskId(req.getLinkedTaskId())
@@ -154,6 +165,13 @@ public class ArticleService {
         article.setVersion(article.getVersion() + 1);
         article.setPublicWithinTenant(req.isPublicWithinTenant());
         article.setLinkedTaskId(req.getLinkedTaskId());
+        if (req.getArticleType() != null) {
+            article.setArticleType(req.getArticleType());
+        }
+        article.setProductVersion(req.getProductVersion());
+        article.setProductVendor(req.getProductVendor());
+        article.setProductIconUrl(req.getProductIconUrl());
+        article.setProductDocumentationUrl(req.getProductDocumentationUrl());
 
         if (req.getCategoryId() != null) {
             categoryRepo.findByIdAndTenantId(req.getCategoryId(), tenantId)
@@ -287,6 +305,11 @@ public class ArticleService {
                 .content(a.getContent())
                 .summary(a.getSummary())
                 .status(a.getStatus())
+                .articleType(a.getArticleType())
+                .productVersion(a.getProductVersion())
+                .productVendor(a.getProductVendor())
+                .productIconUrl(a.getProductIconUrl())
+                .productDocumentationUrl(a.getProductDocumentationUrl())
                 // Hierarchy
                 .parentArticleId(a.getParentArticleId())
                 .sortOrder(a.getSortOrder())

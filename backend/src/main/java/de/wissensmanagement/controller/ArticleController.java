@@ -3,6 +3,7 @@ package de.wissensmanagement.controller;
 import de.wissensmanagement.config.SecurityHelper;
 import de.wissensmanagement.dto.*;
 import de.wissensmanagement.enums.ArticleStatus;
+import de.wissensmanagement.enums.ArticleType;
 import de.wissensmanagement.service.ArticleService;
 import de.wissensmanagement.service.FeedbackService;
 import de.wissensmanagement.service.HierarchyService;
@@ -62,6 +63,7 @@ public class ArticleController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String categoryId,
             @RequestParam(required = false) String groupingId,
+            @RequestParam(required = false) ArticleType articleType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -70,7 +72,7 @@ public class ArticleController {
         permissionService.requireLesen(securityHelper.getCurrentToken());
         String tenantId = securityHelper.getCurrentTenantId();
         Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
-        return articleService.listArticles(tenantId, status, q, categoryId, groupingId, PageRequest.of(page, size, sort));
+        return articleService.listArticles(tenantId, status, q, categoryId, groupingId, articleType, PageRequest.of(page, size, sort));
     }
 
     @GetMapping("/{id}")
