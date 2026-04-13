@@ -45,7 +45,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = extractToken(request);
 
-        if (token == null) {
+        if (token == null || secret == null || secret.isBlank()) {
             filterChain.doFilter(request, response);
             return;
         }
