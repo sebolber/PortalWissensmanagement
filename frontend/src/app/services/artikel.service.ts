@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Article, ArticlePage, ArticleVersion, ArticleTreeNode, BreadcrumbItem, Category, Grouping, PromptConfig, PromptCategory, SearchResult, StructuredResult, Tag, Statistik } from '../models/artikel.model';
+import { Article, ArticlePage, ArticleVersion, ArticleTreeNode, BreadcrumbItem, Category, DocumentSuggestion, Grouping, PromptConfig, PromptCategory, SearchResult, StructuredResult, Tag, Statistik } from '../models/artikel.model';
 
 @Injectable({ providedIn: 'root' })
 export class ArtikelService {
@@ -210,5 +210,32 @@ export class ArtikelService {
 
   importAll(data: any): Observable<any> {
     return this.http.post<any>(`${this.configBase}/import`, data);
+  }
+
+  // --- Document Suggestions ---
+
+  private readonly docSugBase = 'api/document-suggestions';
+
+  uploadDocumentSuggestion(file: File, modelConfigId?: string): Observable<DocumentSuggestion> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (modelConfigId) formData.append('modelConfigId', modelConfigId);
+    return this.http.post<DocumentSuggestion>(`${this.docSugBase}/upload`, formData);
+  }
+
+  listDocumentSuggestions(): Observable<DocumentSuggestion[]> {
+    return this.http.get<DocumentSuggestion[]>(this.docSugBase);
+  }
+
+  getDocumentSuggestion(id: number): Observable<DocumentSuggestion> {
+    return this.http.get<DocumentSuggestion>(`${this.docSugBase}/${id}`);
+  }
+
+  startDocumentSuggestion(id: number): Observable<void> {
+    return this.http.post<void>(`${this.docSugBase}/${id}/start`, {});
+  }
+
+  deleteDocumentSuggestion(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.docSugBase}/${id}`);
   }
 }
